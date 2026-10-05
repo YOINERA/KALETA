@@ -1,26 +1,48 @@
 // ================================================================
-// BASE DE DATOS SIMULADA - LA KALETA v4
-// Con inventario real por variante (talla + color)
+// BASE DE DATOS SIMULADA - LA KALETA v5
+// Con inventario real por variante + Sistema anti-caché
 // ================================================================
+
+// ⚠️ IMPORTANTE: Cambia este número cada vez que modifiques productos
+// Ejemplo: 'v5' → 'v6' → 'v7' → 'v8'...
+const DB_VERSION = 'v5';
 
 const DB = {
     init() {
-        // Forzar reseed si no existe la versión v4
-        if (!localStorage.getItem('lk_v4')) {
-            console.log('🔄 Inicializando base de datos v4...');
-            localStorage.removeItem('lk_initialized');
-            localStorage.removeItem('lk_products');
-            localStorage.removeItem('lk_v3');
+        const versionGuardada = localStorage.getItem('lk_version');
+        
+        if (versionGuardada !== DB_VERSION) {
+            console.log(`🔄 Actualizando de ${versionGuardada || 'ninguna'} a ${DB_VERSION}...`);
+            
+            // Limpiar TODO el localStorage de la app (excepto sesión activa)
+            const currentUser = localStorage.getItem('lk_current_user');
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('lk_') && key !== 'lk_current_user') {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+            
+            // Regenerar datos
             this.seed();
-            localStorage.setItem('lk_v4', 'true');
-            console.log('✅ Base de datos v4 inicializada');
+            localStorage.setItem('lk_version', DB_VERSION);
+            
+            // Restaurar sesión si había una
+            if (currentUser) {
+                localStorage.setItem('lk_current_user', currentUser);
+            }
+            
+            console.log(`✅ Base de datos ${DB_VERSION} inicializada con ${this.getProducts().length} productos`);
         } else {
-            console.log('📦 Base de datos v4 ya existente');
-            // Validación: si los productos no tienen inventario, forzar reseed
+            console.log(`📦 Base de datos ${DB_VERSION} cargada (${this.getProducts().length} productos)`);
+            
+            // Validación: si los productos están corruptos, forzar reseed
             const products = this.getProducts();
             if (!products.length || !products[0].inventario) {
-                console.warn('⚠️ Productos corruptos o sin inventario, forzando reseed...');
-                localStorage.removeItem('lk_v4');
+                console.warn('⚠️ Productos corruptos, forzando reseed...');
+                localStorage.removeItem('lk_version');
                 this.init();
             }
         }
@@ -181,8 +203,6 @@ const DB = {
                 colores: ["Negro", "Blanco", "Gris", "Azul", "Rojo"],
                 sku: "POL-009", destacado: false, nuevo: true
             },
-           
-            
             {
                 id: 10, nombre: "Beanie Unisex", categoria: 'Accesorios', categoriaId: 4,
                 precio: 35.00, precioAnterior: null,
@@ -197,7 +217,6 @@ const DB = {
                 colores: ["Negro", "Gris", "Rojo", "Verde", "Azul Marino"],
                 sku: "BEA-012", destacado: false, nuevo: true
             },
-            
             {
                 id: 11, nombre: "Polera Cuello Alto", categoria: 'Polos', categoriaId: 1,
                 precio: 85.00, precioAnterior: 105.00,
@@ -228,7 +247,7 @@ const DB = {
             }
         ];
 
-        // Generar inventario y calcular stock total (usando DB directamente, no "this")
+        // Generar inventario y calcular stock total
         const self = this;
         const products = rawProducts.map(p => {
             const inv = self.buildInventory(p.tallas, p.colores, 8);
@@ -260,8 +279,6 @@ const DB = {
         localStorage.setItem('lk_orders', JSON.stringify(orders));
         localStorage.setItem('lk_cart', JSON.stringify([]));
         localStorage.setItem('lk_wishlist', JSON.stringify([]));
-
-        console.log(`✅ ${products.length} productos guardados con inventario`);
     },
 
     // ---------- MÉTODOS DE ACCESO ----------
