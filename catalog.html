@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo — LA KALETA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+    <header></header>
+
+    <!-- Banner Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>NUEVA <span>COLECCIÓN</span></h1>
+            <p>Estilo urbano para los que no siguen las reglas</p>
+            <a href="#productos" class="btn-primary">Explorar Catálogo</a>
+        </div>
+    </section>
+
+    <div class="container" id="productos">
+        <div class="catalog-header">
+            <h2>Catálogo</h2>
+            <div class="qr-scan-container">
+                <span>📷 ¿En tienda?</span>
+                <button class="btn-outline" style="padding: 0.4rem 1rem; font-size: 0.85rem;" onclick="openScanner()">Escanear QR</button>
+            </div>
+        </div>
+
+        <!-- Filtros por categoría -->
+        <div class="filters-bar" id="filters-bar">
+            <button class="filter-chip active" data-cat="all" onclick="filterCategory('all', this)">Todos</button>
+            <button class="filter-chip" data-cat="1" onclick="filterCategory(1, this)">Polos</button>
+            <button class="filter-chip" data-cat="2" onclick="filterCategory(2, this)">Pantalones</button>
+            <button class="filter-chip" data-cat="3" onclick="filterCategory(3, this)">Casacas</button>
+            <button class="filter-chip" data-cat="4" onclick="filterCategory(4, this)">Accesorios</button>
+            <button class="filter-chip" data-cat="5" onclick="filterCategory(5, this)">Calzado</button>
+        </div>
+
+        <!-- Grid de productos -->
+        <div class="grid-products" id="products-grid"></div>
+    </div>
+
+    <!-- Modal Escáner QR -->
+    <div class="modal" id="scanner-modal">
+        <div class="modal-content">
+            <h3>📷 Escanear Código QR</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Apunta la cámara al código QR de la prenda</p>
+            <div id="reader"></div>
+            <button class="btn-secondary" onclick="closeScanner()">Cancelar</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 LA KALETA — Streetwear & Urban Culture</p>
+        <p style="margin-top: 0.5rem;">Trujillo, Perú · <a href="#">Políticas</a> · <a href="#">Términos</a></p>
+    </footer>
+
+    <script src="js/db.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        let currentCategory = 'all';
+        let html5QrCode = null;
+
+        // ---------- HELPER: GENERAR FALLBACK ----------
+        function getFallback(nombre) {
+            return `https://placehold.co/600x600/1e1e1e/ff3d00?text=${encodeURIComponent(nombre)}&font=Montserrat`;
+        }
+
+        // ---------- RENDERIZAR PRODUCTOS ----------
+        function renderProducts(category = 'all') {
+            const grid = document.getElementById('products-grid');
+            let products = DB.getProducts();
+
+            if (category !== 'all') {
+                products = products.filter(p => p.categoriaId == category);
+            }
+
+            if (products.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; color: var(--text-muted); grid-column: 1/-1; padding: 3rem;">No hay productos en esta categoría.</p>';
+                return;
+            }
+
+            grid.innerHTML = products.map(p => {
+                const hasDiscount = p.precioAnterior && p.precioAnterior > p.precio;
+                const discountPct = hasDiscount ? Math.round((1 - p.precio / p.precioAnterior) * 100) : 0;
+                const fallbackUrl = p.fallback || getFallback(p.nombre);
+                
+                return `
+                    <div class="product-card">
+                        ${hasDiscount ? `<span class="badge">-${discountPct}%</span>` : ''}
+                        ${p.nuevo && !hasDiscount ? `<span class="badge new">Nuevo</span>` : ''}
+                        <a href="product.html?id=${p.id}" style="text-decoration:none; color:inherit;">
+                            <img src="${p.img}" 
+                                 alt="${p.nombre}" 
+                                 loading="lazy" 
+                                 onerror="this.onerror=null; this.src='${fallbackUrl}';">
+                            <div class="product-info">
+                                <div class="category">${p.categoria}</div>
+                                <h3>${p.nombre}</h3>
+                                <div class="product-price">
+                                    S/ ${p.precio.toFixed(2)}
+                                    ${hasDiscount ? `<span class="old">S/ ${p.precioAnterior.toFixed(2)}</span>` : ''}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                                    ${p.stock === 0 ? '❌ Agotado' : (p.stock <= 5 ? `⚠️ Solo ${p.stock} disponibles` : `✅ ${p.stock} en stock`)}
+                                </div>
+                                <span class="btn-primary" style="font-size: 0.85rem; padding: 0.6rem;">Ver Detalles</span>
+                            </div>
+                        </a>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ---------- FILTROS ----------
+        function filterCategory(cat, btn) {
+            document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentCategory = cat;
+            renderProducts(cat);
+        }
+
+        // ---------- ESCÁNER QR ----------
+        function openScanner() {
+            const modal = document.getElementById('scanner-modal');
+            modal.classList.add('active');
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showToast('Tu navegador no soporta acceso a la cámara. Usa HTTPS.', 'error');
+                modal.classList.remove('active');
+                return;
+            }
+
+            html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                (decodedText) => {
+                    console.log('QR escaneado:', decodedText);
+                    html5QrCode.stop().then(() => {
+                        modal.classList.remove('active');
+                        
+                        // Extraer ID del producto desde la URL escaneada
+                        let productId = null;
+                        try {
+                            const url = new URL(decodedText);
+                            productId = url.searchParams.get("id");
+                        } catch (e) {
+                            // Si el QR contiene solo el número
+                            productId = decodedText.replace(/\D/g, '');
+                        }
+
+                        const producto = DB.getProducts().find(p => p.id == productId);
+                        if (producto) {
+                            showToast(`📷 Producto escaneado: ${producto.nombre}`, 'success');
+                            setTimeout(() => window.location.href = `product.html?id=${productId}`, 1000);
+                        } else {
+                            showToast('Código QR no válido para esta tienda', 'error');
+                        }
+                    });
+                },
+                () => {}
+            ).catch(err => {
+                console.error('Error cámara:', err);
+                showToast('No se pudo acceder a la cámara. Verifica los permisos.', 'error');
+                modal.classList.remove('active');
+            });
+        }
+
+        function closeScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().catch(() => {});
+            }
+            document.getElementById('scanner-modal').classList.remove('active');
+        }
+
+        // ---------- INICIALIZACIÓN ----------
+        document.addEventListener('DOMContentLoaded', () => {
+            requireAuth('client');
+            renderProducts('all');
+        });
+    </script>
+</body>
+</html>

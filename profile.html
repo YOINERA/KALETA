@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil — LA KALETA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <div class="container">
+        <h2 style="margin-bottom: 1.5rem; text-transform:uppercase; letter-spacing:1px;">Mi Perfil</h2>
+
+        <div class="form-card">
+            <h3>Datos Personales</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="perfil-nombre" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="perfil-email" disabled>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="perfil-telefono" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <input type="text" id="perfil-direccion" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <h3>Mis Pedidos</h3>
+            <div id="orders-list"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 LA KALETA — Streetwear & Urban Culture</p>
+    </footer>
+
+    <script src="js/db.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        function renderProfile() {
+            const user = DB.getCurrentUser();
+            
+            document.getElementById('perfil-nombre').value = user.nombre;
+            document.getElementById('perfil-email').value = user.email;
+            document.getElementById('perfil-telefono').value = user.telefono || 'No registrado';
+            document.getElementById('perfil-direccion').value = user.direccion || 'No registrada';
+
+            const orders = DB.getOrders().filter(o => o.userId == user.id);
+            const container = document.getElementById('orders-list');
+
+            if (orders.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align:center; padding: 2rem;">No tienes pedidos aún. <a href="catalog.html" style="color: var(--primary);">Explora el catálogo</a></p>';
+                return;
+            }
+
+            container.innerHTML = orders.reverse().map(o => `
+                <div style="background: var(--surface-2); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--border);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.8rem;">
+                        <strong style="color: var(--primary);">${o.id}</strong>
+                        <span style="font-size: 0.8rem; background: ${o.estado === 'Entregado' ? 'var(--success)' : (o.estado === 'Pendiente' ? 'var(--warning)' : 'var(--primary)')}; color: ${o.estado === 'Entregado' ? '#000' : '#fff'}; padding: 3px 10px; border-radius: 50px; font-weight: 700;">${o.estado}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">📅 ${o.fecha}</div>
+                    <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
+                        ${o.items.map(i => `<div>• ${i.cantidad}x ${i.nombre} ${i.talla ? `(${i.talla}/${i.color})` : ''}</div>`).join('')}
+                    </div>
+                    <div style="text-align: right; font-weight: 800; color: var(--primary); font-size: 1.1rem;">Total: S/ ${o.total.toFixed(2)}</div>
+                </div>
+            `).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            requireAuth('client');
+            renderProfile();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout — LA KALETA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <div class="container">
+        <h2 style="margin-bottom: 1.5rem; text-transform:uppercase; letter-spacing:1px;">Finalizar Compra</h2>
+
+        <div style="display:grid; gap:1.5rem; grid-template-columns: 1fr;" id="checkout-grid">
+            <!-- Formulario -->
+            <div class="form-card">
+                <h3>Datos de Envío</h3>
+                <form id="checkout-form" onsubmit="processPayment(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre Completo</label>
+                            <input type="text" id="co-nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="tel" id="co-telefono" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección</label>
+                        <input type="text" id="co-direccion" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Ciudad</label>
+                            <input type="text" id="co-ciudad" value="Trujillo" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Referencia</label>
+                            <input type="text" id="co-referencia" placeholder="Opcional">
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 1.5rem;">Método de Pago</h3>
+                    <div class="form-group">
+                        <label>Selecciona tu método</label>
+                        <select id="co-metodo">
+                            <option value="tarjeta">💳 Tarjeta de Crédito / Débito</option>
+                            <option value="yape">📱 Yape / Plin</option>
+                            <option value="transferencia">🏦 Transferencia Bancaria</option>
+                            <option value="contraentrega">💵 Pago contra entrega</option>
+                        </select>
+                    </div>
+
+                    <div id="card-fields">
+                        <div class="form-group">
+                            <label>Número de Tarjeta (Simulado)</label>
+                            <input type="text" value="**** **** **** 1234" disabled>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Vencimiento</label>
+                                <input type="text" value="12/28" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>CVV</label>
+                                <input type="text" value="***" disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">Confirmar y Pagar</button>
+                </form>
+            </div>
+
+            <!-- Resumen -->
+            <div class="form-card">
+                <h3>Resumen del Pedido</h3>
+                <div id="checkout-summary"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 LA KALETA — Streetwear & Urban Culture</p>
+    </footer>
+
+    <script src="js/db.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        function renderCheckout() {
+            const cart = DB.getCart();
+            const user = DB.getCurrentUser();
+
+            if (cart.length === 0) {
+                window.location.href = 'cart.html';
+                return;
+            }
+
+            // Pre-llenar datos
+            document.getElementById('co-nombre').value = user.nombre;
+            document.getElementById('co-telefono').value = user.telefono || '';
+            document.getElementById('co-direccion').value = user.direccion || '';
+
+            // Resumen
+            const subtotal = Cart.getTotal();
+            const envio = subtotal > 150 ? 0 : 15;
+            const total = subtotal + envio;
+
+            document.getElementById('checkout-summary').innerHTML = `
+                ${cart.map(i => `
+                    <div class="summary-row">
+                        <span>${i.cantidad}x ${i.nombre} (${i.talla}/${i.color})</span>
+                        <span>S/ ${(i.precio * i.cantidad).toFixed(2)}</span>
+                    </div>
+                `).join('')}
+                <div class="summary-row" style="border-top:1px solid var(--border); padding-top:0.8rem; margin-top:0.8rem;">
+                    <span>Subtotal</span><span>S/ ${subtotal.toFixed(2)}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Envío</span><span>${envio === 0 ? 'GRATIS' : 'S/ ' + envio.toFixed(2)}</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span><span>S/ ${total.toFixed(2)}</span>
+                </div>
+            `;
+        }
+
+        function processPayment(e) {
+            e.preventDefault();
+            
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerText = 'Procesando pago...';
+            btn.disabled = true;
+
+            // Simular procesamiento
+            setTimeout(() => {
+                const cart = DB.getCart();
+                const subtotal = Cart.getTotal();
+                const envio = subtotal > 150 ? 0 : 15;
+                const total = subtotal + envio;
+
+                // Crear pedido
+                const orders = DB.getOrders();
+                const user = DB.getCurrentUser();
+                const newOrder = {
+                    id: 'ORD-' + String(orders.length + 1).padStart(3, '0'),
+                    userId: user.id,
+                    fecha: new Date().toISOString().split('T')[0],
+                    total: total,
+                    estado: 'Pendiente',
+                    items: cart.map(i => ({ nombre: i.nombre, cantidad: i.cantidad, precio: i.precio, talla: i.talla, color: i.color }))
+                };
+                orders.push(newOrder);
+                DB.setOrders(orders);
+
+                // Registrar venta para el admin
+                const sales = DB.getSales();
+                sales.push({
+                    id: DB.generateId(),
+                    cliente: user.nombre,
+                    total: total,
+                    fecha: new Date().toISOString().split('T')[0],
+                    estado: 'Pendiente',
+                    items: cart.length
+                });
+                DB.setSales(sales);
+
+                // Vaciar carrito
+                Cart.clear();
+
+                // Redirigir a perfil con mensaje
+                showToast('✅ ¡Pago exitoso! Pedido confirmado.', 'success');
+                setTimeout(() => window.location.href = 'profile.html', 1200);
+            }, 2000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            requireAuth('client');
+            renderCheckout();
+        });
+    </script>
+</body>
+</html>

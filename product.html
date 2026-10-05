@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Producto — LA KALETA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header></header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="catalog.html">Catálogo</a> / <span id="breadcrumb-cat">Producto</span>
+        </div>
+
+        <div class="product-detail" id="product-detail">
+            <!-- Se carga vía JS -->
+        </div>
+
+        <div style="margin-top: 3rem;">
+            <h2 style="margin-bottom: 1.5rem; text-transform:uppercase; letter-spacing:1px;">Productos Relacionados</h2>
+            <div class="grid-products" id="related-products"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 LA KALETA — Streetwear & Urban Culture</p>
+    </footer>
+
+    <script src="js/db.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        let currentProduct = null;
+
+        // ---------- HELPER: GENERAR FALLBACK ----------
+        function getFallback(nombre) {
+            return `https://placehold.co/600x600/1e1e1e/ff3d00?text=${encodeURIComponent(nombre)}&font=Montserrat`;
+        }
+
+        function loadProduct() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            const product = DB.getProducts().find(p => p.id == id);
+
+            if (!product) {
+                window.location.href = 'catalog.html';
+                return;
+            }
+
+            currentProduct = product;
+
+            document.getElementById('breadcrumb-cat').innerText = product.categoria;
+
+            const hasDiscount = product.precioAnterior && product.precioAnterior > product.precio;
+            const discountPct = hasDiscount ? Math.round((1 - product.precio / product.precioAnterior) * 100) : 0;
+            const stockClass = product.stock === 0 ? 'out' : (product.stock <= 5 ? 'low' : '');
+            const stockText = product.stock === 0 ? 'Agotado' : (product.stock <= 5 ? `¡Solo ${product.stock} disponibles!` : `${product.stock} en stock`);
+            const fallbackUrl = product.fallback || getFallback(product.nombre);
+
+            document.getElementById('product-detail').innerHTML = `
+                <div class="product-gallery">
+                    <img src="${product.img}" 
+                         alt="${product.nombre}" 
+                         onerror="this.onerror=null; this.src='${fallbackUrl}';">
+                </div>
+                <div class="product-detail-info">
+                    <div class="category" style="color: var(--text-muted); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 0.5rem;">${product.categoria}</div>
+                    <h1>${product.nombre}</h1>
+                    <div class="price-block">
+                        <span class="price">S/ ${product.precio.toFixed(2)}</span>
+                        ${hasDiscount ? `<span class="price-old">S/ ${product.precioAnterior.toFixed(2)}</span><span class="discount-tag">-${discountPct}%</span>` : ''}
+                    </div>
+                    <div class="stock-info">
+                        <span class="stock-dot ${stockClass}"></span>
+                        <span style="color: var(--text-muted);">${stockText}</span>
+                    </div>
+                    <p class="description">${product.desc}</p>
+                    
+                    <div class="form-group">
+                        <label>Talla</label>
+                        <select id="select-talla">
+                            ${product.tallas.map(t => `<option value="${t}">${t}</option>`).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Color</label>
+                        <select id="select-color">
+                            ${product.colores.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div style="display:flex; gap:0.8rem; margin-top:1.5rem;">
+                        <button class="btn-primary" onclick="addToCart()" ${product.stock === 0 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
+                            🛒 Agregar al Carrito
+                        </button>
+                    </div>
+
+                    <div style="margin-top:1.5rem; padding:1rem; background: var(--surface); border-radius: 8px; border:1px solid var(--border); font-size:0.85rem; color: var(--text-muted);">
+                        <p>🚚 Envío gratis en compras mayores a S/ 150</p>
+                        <p style="margin-top:0.5rem;">🔄 Devolución gratuita dentro de 30 días</p>
+                        <p style="margin-top:0.5rem;">📦 SKU: ${product.sku}</p>
+                    </div>
+                </div>
+            `;
+
+            // Productos relacionados (misma categoría, excluyendo el actual)
+            const related = DB.getProducts().filter(p => p.categoriaId === product.categoriaId && p.id !== product.id).slice(0, 4);
+            const relatedGrid = document.getElementById('related-products');
+            
+            if (related.length === 0) {
+                relatedGrid.innerHTML = '<p style="color: var(--text-muted);">No hay productos relacionados.</p>';
+                return;
+            }
+
+            relatedGrid.innerHTML = related.map(p => {
+                const fallback = p.fallback || getFallback(p.nombre);
+                return `
+                    <div class="product-card">
+                        <a href="product.html?id=${p.id}" style="text-decoration:none; color:inherit;">
+                            <img src="${p.img}" 
+                                 alt="${p.nombre}" 
+                                 loading="lazy" 
+                                 onerror="this.onerror=null; this.src='${fallback}';">
+                            <div class="product-info">
+                                <h3>${p.nombre}</h3>
+                                <div class="product-price">S/ ${p.precio.toFixed(2)}</div>
+                            </div>
+                        </a>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addToCart() {
+            if (!currentProduct) return;
+            const talla = document.getElementById('select-talla').value;
+            const color = document.getElementById('select-color').value;
+            Cart.add(currentProduct, talla, color);
+            renderHeader();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            requireAuth('client');
+            loadProduct();
+        });
+    </script>
+</body>
+</html>
