@@ -1,25 +1,36 @@
 // ================================================================
-// BASE DE DATOS SIMULADA - LA KALETA v3
+// BASE DE DATOS SIMULADA - LA KALETA v4
 // Con inventario real por variante (talla + color)
 // ================================================================
 
 const DB = {
     init() {
-        if (!localStorage.getItem('lk_v3')) {
+        // Forzar reseed si no existe la versión v4
+        if (!localStorage.getItem('lk_v4')) {
+            console.log('🔄 Inicializando base de datos v4...');
             localStorage.removeItem('lk_initialized');
             localStorage.removeItem('lk_products');
+            localStorage.removeItem('lk_v3');
             this.seed();
-            localStorage.setItem('lk_v3', 'true');
+            localStorage.setItem('lk_v4', 'true');
+            console.log('✅ Base de datos v4 inicializada');
+        } else {
+            console.log('📦 Base de datos v4 ya existente');
+            // Validación: si los productos no tienen inventario, forzar reseed
+            const products = this.getProducts();
+            if (!products.length || !products[0].inventario) {
+                console.warn('⚠️ Productos corruptos o sin inventario, forzando reseed...');
+                localStorage.removeItem('lk_v4');
+                this.init();
+            }
         }
     },
 
     // Helper para generar inventario por variante
-    // Retorna un objeto: { "S-Negro": 5, "M-Negro": 3, ... }
-    buildInventory(tallas, colores, stockBase = 5) {
+    buildInventory(tallas, colores, stockBase = 8) {
         const inv = {};
         tallas.forEach(t => {
             colores.forEach(c => {
-                // Stock aleatorio entre 0 y stockBase para simular realidad
                 inv[`${t}__${c}`] = Math.floor(Math.random() * (stockBase + 1));
             });
         });
@@ -41,17 +52,14 @@ const DB = {
         ];
 
         const fallback = (nombre) => `https://placehold.co/600x600/1e1e1e/ff3d00?text=${encodeURIComponent(nombre)}&font=Montserrat`;
-
-        // Helper para calcular stock total desde inventario
         const totalStock = (inv) => Object.values(inv).reduce((s, v) => s + v, 0);
 
-        // ---- PRODUCTOS CON INVENTARIO DETALLADO ----
         const rawProducts = [
             {
                 id: 1, nombre: "Polo Oversize 'Urban'", categoria: 'Polos', categoriaId: 1,
                 precio: 59.90, precioAnterior: 79.90,
                 img: "https://images.pexels.com/photos/8532616/pexels-photo-8532616.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Polo de algodón premium con corte oversize. Ideal para un look urbano y cómodo. Estampado minimalista en el pecho.",
+                desc: "Polo de algodón premium con corte oversize.",
                 descLarga: "Confeccionado en algodón peinado de 180 g/m², este polo oversize ofrece una caída perfecta y máxima comodidad. Su corte relajado y el estampado minimalista lo convierten en la pieza ideal para un look urbano sin esfuerzo.",
                 composicion: "100% Algodón peinado",
                 cuidados: "Lavar a máquina en frío. No usar secadora. Planchar a temperatura media.",
@@ -65,7 +73,7 @@ const DB = {
                 id: 2, nombre: "Pantalón Cargo Táctico", categoria: 'Pantalones', categoriaId: 2,
                 precio: 120.00, precioAnterior: 150.00,
                 img: "https://images.pexels.com/photos/1082528/pexels-photo-1082528.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Pantalón cargo con múltiples bolsillos. Tela resistente y fresca. Perfecto para el día a día.",
+                desc: "Pantalón cargo con múltiples bolsillos.",
                 descLarga: "Diseñado para resistir el uso diario, este pantalón cargo combina funcionalidad y estilo. Sus 6 bolsillos ofrecen espacio para todo lo que necesitas, mientras que su tejido de sarga garantiza durabilidad.",
                 composicion: "98% Algodón, 2% Elastano",
                 cuidados: "Lavado a mano o máquina en ciclo suave. No usar blanqueador.",
@@ -79,7 +87,7 @@ const DB = {
                 id: 3, nombre: "Casaca Bomber Neón", categoria: 'Casacas', categoriaId: 3,
                 precio: 180.00, precioAnterior: 220.00,
                 img: "https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Casaca bomber con cierre metálico y detalles en neón. Perfecta para las noches frías.",
+                desc: "Casaca bomber con cierre metálico y detalles en neón.",
                 descLarga: "Esta casaca bomber redefine el estilo urbano nocturno. Su forro interior térmico y los detalles reflectantes en neón te mantienen abrigado y visible. Cierre metálico YKK de alta durabilidad.",
                 composicion: "Exterior: 100% Poliéster | Forro: 100% Poliéster",
                 cuidados: "Limpieza en seco recomendada. No planchar directamente sobre el estampado.",
@@ -93,7 +101,7 @@ const DB = {
                 id: 4, nombre: "Gorra Snapback Roja", categoria: 'Accesorios', categoriaId: 4,
                 precio: 45.00, precioAnterior: null,
                 img: "https://images.pexels.com/photos/1878821/pexels-photo-1878821.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Gorra snapback ajustable con bordado frontal. Accesorio imprescindible para tu outfit.",
+                desc: "Gorra snapback ajustable con bordado frontal.",
                 descLarga: "Gorra snapback de 6 paneles con cierre ajustable. Bordado frontal de alta definición y visera plana. Interior con cinta absorbente para mayor comodidad.",
                 composicion: "100% Algodón",
                 cuidados: "Limpieza con paño húmedo. No sumergir en agua.",
@@ -107,7 +115,7 @@ const DB = {
                 id: 5, nombre: "Hoodie Gris Melange", categoria: 'Casacas', categoriaId: 3,
                 precio: 95.00, precioAnterior: 120.00,
                 img: "https://images.pexels.com/photos/7679720/pexels-photo-7679720.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Hoodie con capucha y bolsillo canguro. Suave al tacto y muy abrigador.",
+                desc: "Hoodie con capucha y bolsillo canguro.",
                 descLarga: "Hoodie de felpa perchada con interior suave. Capucha doble y cordones ajustables. Bolsillo canguro con refuerzo en las costuras. Puños y cintura elásticos.",
                 composicion: "80% Algodón, 20% Poliéster",
                 cuidados: "Lavar del revés en frío. Secar a la sombra.",
@@ -121,7 +129,7 @@ const DB = {
                 id: 6, nombre: "Zapatillas Streetwear", categoria: 'Calzado', categoriaId: 5,
                 precio: 210.00, precioAnterior: 260.00,
                 img: "https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Zapatillas de diseño urbano, cómodas y versátiles para cualquier outfit.",
+                desc: "Zapatillas de diseño urbano, cómodas y versátiles.",
                 descLarga: "Zapatillas con suela de goma antideslizante y plantilla acolchada para máxima comodidad. Diseño versátil que combina con cualquier outfit urbano. Cordones resistentes.",
                 composicion: "Exterior: Cuero sintético | Suela: Goma",
                 cuidados: "Limpiar con paño húmedo. No lavar en máquina.",
@@ -135,7 +143,7 @@ const DB = {
                 id: 7, nombre: "Lentes de Sol Retro", categoria: 'Accesorios', categoriaId: 4,
                 precio: 55.00, precioAnterior: null,
                 img: "https://images.pexels.com/photos/46710/pexels-photo-46710.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Lentes de sol con protección UV400. Estilo retro urbano que marca la diferencia.",
+                desc: "Lentes de sol con protección UV400.",
                 descLarga: "Lentes de sol con lentes polarizadas y protección UV400. Montura resistente de acetato. Incluye estuche rígido y paño de limpieza.",
                 composicion: "Montura: Acetato | Lentes: Policarbonato",
                 cuidados: "Limpiar con el paño incluido. Guardar en su estuche.",
@@ -149,8 +157,8 @@ const DB = {
                 id: 8, nombre: "Mochila Táctica", categoria: 'Accesorios', categoriaId: 4,
                 precio: 135.00, precioAnterior: 170.00,
                 img: "https://images.pexels.com/photos/1545998/pexels-photo-1545998.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Mochila resistente al agua con compartimento para laptop. Estilo táctico y funcional.",
-                descLarga: "Mochila táctica de 25L con múltiples compartimentos. Compartimento acolchado para laptop de hasta 15.6\". Tejido resistente al agua. Espaldar acolchado y correas ajustables.",
+                desc: "Mochila resistente al agua con compartimento para laptop.",
+                descLarga: "Mochila táctica de 25L con múltiples compartimentos. Compartimento acolchado para laptop de hasta 15.6 pulgadas. Tejido resistente al agua. Espaldar acolchado y correas ajustables.",
                 composicion: "100% Poliéster 600D resistente al agua",
                 cuidados: "Limpiar con paño húmedo. No lavar en máquina.",
                 origen: "Importado",
@@ -163,7 +171,7 @@ const DB = {
                 id: 9, nombre: "Polo Gráfico 'Skate'", categoria: 'Polos', categoriaId: 1,
                 precio: 65.00, precioAnterior: null,
                 img: "https://images.pexels.com/photos/1232459/pexels-photo-1232459.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Polo con gráfico estilo skate. Algodón 100% peinado. Corte regular.",
+                desc: "Polo con gráfico estilo skate.",
                 descLarga: "Polo con gráfico serigrafiado estilo skate. Confeccionado en algodón peinado de alta calidad. Corte regular que se adapta a cualquier silueta.",
                 composicion: "100% Algodón peinado",
                 cuidados: "Lavar a máquina en frío. No usar secadora.",
@@ -177,7 +185,7 @@ const DB = {
                 id: 10, nombre: "Short Deportivo Negro", categoria: 'Pantalones', categoriaId: 2,
                 precio: 75.00, precioAnterior: 95.00,
                 img: "https://images.pexels.com/photos/1598507/pexels-photo-1598507.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Short deportivo con tejido transpirable. Ideal para el gym o el día a día.",
+                desc: "Short deportivo con tejido transpirable.",
                 descLarga: "Short deportivo con tejido transpirable y elástico en la cintura. Bolsillos laterales con cierre. Ideal para entrenar o para el día a día.",
                 composicion: "90% Poliéster, 10% Elastano",
                 cuidados: "Lavar a máquina en frío. Secar al aire.",
@@ -191,7 +199,7 @@ const DB = {
                 id: 11, nombre: "Chaqueta Jean Clásica", categoria: 'Casacas', categoriaId: 3,
                 precio: 195.00, precioAnterior: 240.00,
                 img: "https://images.pexels.com/photos/1124465/pexels-photo-1124465.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Chaqueta de jean con corte clásico. Un básico atemporal para cualquier guardarropa urbano.",
+                desc: "Chaqueta de jean con corte clásico.",
                 descLarga: "Chaqueta de jean con corte clásico y lavado medio. Botones metálicos y costuras reforzadas. Cuatro bolsillos frontales. Un básico atemporal que nunca pasa de moda.",
                 composicion: "100% Algodón denim",
                 cuidados: "Lavar del revés en frío. No usar secadora.",
@@ -205,7 +213,7 @@ const DB = {
                 id: 12, nombre: "Beanie Negro Unisex", categoria: 'Accesorios', categoriaId: 4,
                 precio: 35.00, precioAnterior: null,
                 img: "https://images.pexels.com/photos/6046159/pexels-photo-6046159.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Gorro de lana suave y abrigador. Diseño unisex con logo bordado.",
+                desc: "Gorro de lana suave y abrigador.",
                 descLarga: "Beanie de tejido acanalado con doble capa para mayor abrigo. Logo bordado en la parte frontal. Diseño unisex que se adapta a cualquier estilo.",
                 composicion: "100% Acrílico",
                 cuidados: "Lavar a mano en agua fría. Secar en plano.",
@@ -219,7 +227,7 @@ const DB = {
                 id: 13, nombre: "Jogger Deportivo Gris", categoria: 'Pantalones', categoriaId: 2,
                 precio: 89.90, precioAnterior: 110.00,
                 img: "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Jogger con puños elásticos y cordón ajustable. Cómodo y con estilo para el día a día.",
+                desc: "Jogger con puños elásticos y cordón ajustable.",
                 descLarga: "Jogger de felpa perchada con puños elásticos y cordón ajustable. Dos bolsillos laterales y uno trasero. Corte tapered que estiliza la silueta.",
                 composicion: "70% Algodón, 30% Poliéster",
                 cuidados: "Lavar a máquina en frío. Secar a la sombra.",
@@ -233,7 +241,7 @@ const DB = {
                 id: 14, nombre: "Polera Cuello Alto", categoria: 'Polos', categoriaId: 1,
                 precio: 85.00, precioAnterior: 105.00,
                 img: "https://images.pexels.com/photos/6626903/pexels-photo-6626903.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Polera de cuello alto en tejido grueso. Elegante y abrigadora para el invierno.",
+                desc: "Polera de cuello alto en tejido grueso.",
                 descLarga: "Polera de cuello alto en tejido grueso de punto acanalado. Suave al tacto y muy abrigadora. Perfecta para combinar con jeans o pantalones de vestir.",
                 composicion: "60% Algodón, 40% Acrílico",
                 cuidados: "Lavar a mano en agua fría. No usar secadora.",
@@ -247,7 +255,7 @@ const DB = {
                 id: 15, nombre: "Zapatillas Running Pro", categoria: 'Calzado', categoriaId: 5,
                 precio: 245.00, precioAnterior: 290.00,
                 img: "https://images.pexels.com/photos/1456706/pexels-photo-1456706.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Zapatillas deportivas con amortiguación de alto rendimiento. Diseño moderno y funcional.",
+                desc: "Zapatillas deportivas con amortiguación de alto rendimiento.",
                 descLarga: "Zapatillas de running con tecnología de amortiguación de alto impacto. Malla transpirable en la parte superior. Suela de goma con tracción multidireccional.",
                 composicion: "Upper: Malla técnica | Suela: Goma EVA",
                 cuidados: "Limpiar con paño húmedo. No lavar en máquina.",
@@ -259,9 +267,10 @@ const DB = {
             }
         ];
 
-        // Generar inventario y calcular stock total
+        // Generar inventario y calcular stock total (usando DB directamente, no "this")
+        const self = this;
         const products = rawProducts.map(p => {
-            const inv = this.buildInventory(p.tallas, p.colores, 8);
+            const inv = self.buildInventory(p.tallas, p.colores, 8);
             return {
                 ...p,
                 fallback: fallback(p.nombre),
@@ -290,6 +299,8 @@ const DB = {
         localStorage.setItem('lk_orders', JSON.stringify(orders));
         localStorage.setItem('lk_cart', JSON.stringify([]));
         localStorage.setItem('lk_wishlist', JSON.stringify([]));
+
+        console.log(`✅ ${products.length} productos guardados con inventario`);
     },
 
     // ---------- MÉTODOS DE ACCESO ----------
@@ -315,19 +326,19 @@ const DB = {
 
     // ---------- HELPERS DE INVENTARIO ----------
     getStockByVariant(product, talla, color) {
-        if (!product.inventario) return 0;
+        if (!product || !product.inventario) return 0;
         return product.inventario[`${talla}__${color}`] || 0;
     },
 
     getStockByTalla(product, talla) {
-        if (!product.inventario) return 0;
+        if (!product || !product.inventario) return 0;
         return Object.entries(product.inventario)
             .filter(([k]) => k.startsWith(`${talla}__`))
             .reduce((s, [, v]) => s + v, 0);
     },
 
     getStockByColor(product, color) {
-        if (!product.inventario) return 0;
+        if (!product || !product.inventario) return 0;
         return Object.entries(product.inventario)
             .filter(([k]) => k.endsWith(`__${color}`))
             .reduce((s, [, v]) => s + v, 0);

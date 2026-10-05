@@ -6,7 +6,6 @@
     <title>Producto — LA KALETA</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* Estilos específicos del detalle de producto */
         .variant-section {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -14,7 +13,6 @@
             padding: 1.2rem;
             margin-bottom: 1.2rem;
         }
-        
         .variant-section h4 {
             font-size: 0.85rem;
             text-transform: uppercase;
@@ -25,18 +23,15 @@
             justify-content: space-between;
             align-items: center;
         }
-
         .variant-section h4 .stock-total {
             color: var(--primary);
             font-weight: 800;
         }
-
         .variant-options {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
-
         .variant-btn {
             background: var(--bg);
             border: 2px solid var(--border);
@@ -52,18 +47,15 @@
             min-width: 50px;
             text-align: center;
         }
-
         .variant-btn:hover:not(.disabled):not(.selected) {
             border-color: var(--primary);
         }
-
         .variant-btn.selected {
             background: var(--primary);
             border-color: var(--primary);
             color: white;
             box-shadow: 0 0 15px rgba(255, 61, 0, 0.4);
         }
-
         .variant-btn.disabled {
             opacity: 0.35;
             cursor: not-allowed;
@@ -71,7 +63,6 @@
             background: #1a1a1a;
             color: #555;
         }
-
         .variant-btn .stock-mini {
             display: block;
             font-size: 0.65rem;
@@ -79,52 +70,21 @@
             opacity: 0.8;
             margin-top: 2px;
         }
-
         .variant-btn.selected .stock-mini {
             color: #ffe0d5;
         }
-
-        /* Tabla de disponibilidad */
-        .stock-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            margin-top: 0.8rem;
-        }
-
-        .stock-table th, .stock-table td {
-            padding: 0.6rem;
-            text-align: center;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .stock-table th {
-            background: var(--bg);
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stock-ok { color: var(--success); font-weight: 700; }
-        .stock-low { color: var(--warning); font-weight: 700; }
-        .stock-out { color: var(--danger); font-weight: 700; }
-
-        /* Info adicional del producto */
         .info-grid {
             display: grid;
             grid-template-columns: 1fr;
             gap: 0.8rem;
             margin-top: 1.5rem;
         }
-
         .info-item {
             background: var(--surface);
             padding: 1rem;
             border-radius: 8px;
             border-left: 3px solid var(--primary);
         }
-
         .info-item .label {
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -133,18 +93,15 @@
             margin-bottom: 0.3rem;
             font-weight: 700;
         }
-
         .info-item .value {
             font-size: 0.9rem;
             line-height: 1.5;
         }
-
         @media (min-width: 768px) {
             .info-grid {
                 grid-template-columns: 1fr 1fr;
             }
         }
-
         .live-stock-indicator {
             display: inline-flex;
             align-items: center;
@@ -157,7 +114,6 @@
             font-size: 0.75rem;
             font-weight: 700;
         }
-
         .live-stock-indicator::before {
             content: '';
             width: 6px;
@@ -166,10 +122,18 @@
             border-radius: 50%;
             animation: pulse-live 1.5s infinite;
         }
-
         @keyframes pulse-live {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
+        }
+        .error-box {
+            background: rgba(255, 23, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            margin: 2rem 0;
         }
     </style>
 </head>
@@ -218,18 +182,51 @@
         }
 
         function loadProduct() {
+            console.log('🚀 Cargando producto...');
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
-            const product = DB.getProducts().find(p => p.id == id);
+            console.log('📦 ID solicitado:', id);
 
-            if (!product) {
+            if (!id) {
+                console.warn('❌ No hay ID en la URL');
                 window.location.href = 'catalog.html';
                 return;
             }
 
+            const product = DB.getProducts().find(p => p.id == id);
+
+            if (!product) {
+                console.warn('❌ Producto no encontrado con ID:', id);
+                document.getElementById('product-detail').innerHTML = `
+                    <div class="error-box">
+                        <h3>Producto no encontrado</h3>
+                        <p style="margin-top: 0.5rem;">El producto con ID ${id} no existe.</p>
+                        <a href="catalog.html" class="btn-primary" style="margin-top: 1rem; max-width: 250px;">Volver al catálogo</a>
+                    </div>
+                `;
+                return;
+            }
+
+            console.log('✅ Producto encontrado:', product.nombre);
+
             currentProduct = product;
 
+            // Validar que el producto tenga tallas y colores
+            if (!product.tallas || !product.colores || !product.inventario) {
+                console.error('❌ Producto sin tallas/colores/inventario:', product);
+                document.getElementById('product-detail').innerHTML = `
+                    <div class="error-box">
+                        <h3>Producto con datos incompletos</h3>
+                        <p style="margin-top: 0.5rem;">Este producto no tiene inventario configurado. Limpia el localStorage y recarga.</p>
+                        <button class="btn-primary" onclick="forzarReseed()" style="margin-top: 1rem; max-width: 250px;">Limpiar y Recargar</button>
+                    </div>
+                `;
+                return;
+            }
+
             // Auto-seleccionar primera variante con stock
+            selectedTalla = null;
+            selectedColor = null;
             for (const t of product.tallas) {
                 for (const c of product.colores) {
                     if (DB.getStockByVariant(product, t, c) > 0) {
@@ -245,6 +242,8 @@
                 selectedColor = product.colores[0];
             }
 
+            console.log('🎯 Selección inicial:', selectedTalla, selectedColor);
+
             document.getElementById('breadcrumb-cat').innerText = product.categoria;
 
             const hasDiscount = product.precioAnterior && product.precioAnterior > product.precio;
@@ -252,7 +251,6 @@
             const totalStock = product.stock;
             const fallbackUrl = product.fallback || getFallback(product.nombre);
 
-            // Estado general
             let estadoStock, estadoClass;
             if (totalStock === 0) { estadoStock = '❌ Producto Agotado'; estadoClass = 'out'; }
             else if (totalStock <= 10) { estadoStock = `⚠️ Últimas unidades (${totalStock} disponibles)`; estadoClass = 'low'; }
@@ -284,7 +282,6 @@
 
                     <p class="description">${product.descLarga || product.desc}</p>
 
-                    <!-- ============ SELECCIÓN DE TALLA ============ -->
                     <div class="variant-section">
                         <h4>
                             <span>📏 Talla</span>
@@ -306,7 +303,6 @@
                         </div>
                     </div>
 
-                    <!-- ============ SELECCIÓN DE COLOR ============ -->
                     <div class="variant-section">
                         <h4>
                             <span>🎨 Color</span>
@@ -328,7 +324,6 @@
                         </div>
                     </div>
 
-                    <!-- ============ DISPONIBILIDAD POR COMBINACIÓN ============ -->
                     <div class="variant-section">
                         <h4>
                             <span>📊 Disponibilidad por combinación</span>
@@ -336,10 +331,8 @@
                         <div id="combinacion-info"></div>
                     </div>
 
-                    <!-- ============ BOTÓN AGREGAR ============ -->
                     <div id="add-to-cart-container" style="margin-top: 1.5rem;"></div>
 
-                    <!-- ============ INFORMACIÓN ADICIONAL ============ -->
                     <div class="info-grid">
                         <div class="info-item">
                             <div class="label">🧵 Composición</div>
@@ -369,12 +362,10 @@
                 </div>
             `;
 
-            // Marcar selección inicial
             actualizarSeleccionUI();
             renderCombinacionInfo();
             renderBotonAgregar();
 
-            // Productos relacionados
             const related = DB.getProducts().filter(p => p.categoriaId === product.categoriaId && p.id !== product.id).slice(0, 4);
             const relatedGrid = document.getElementById('related-products');
             
@@ -403,9 +394,15 @@
                     </div>
                 `;
             }).join('');
+
+            console.log('✅ Producto renderizado correctamente');
         }
 
-        // ---------- SELECCIÓN DE TALLA ----------
+        function forzarReseed() {
+            localStorage.clear();
+            window.location.reload();
+        }
+
         function selectTalla(talla, btn) {
             if (btn.classList.contains('disabled')) return;
             selectedTalla = talla;
@@ -414,7 +411,6 @@
             renderBotonAgregar();
         }
 
-        // ---------- SELECCIÓN DE COLOR ----------
         function selectColor(color, btn) {
             if (btn.classList.contains('disabled')) return;
             selectedColor = color;
@@ -423,20 +419,14 @@
             renderBotonAgregar();
         }
 
-        // ---------- ACTUALIZAR UI DE SELECCIÓN ----------
         function actualizarSeleccionUI() {
-            // Tallas
             document.querySelectorAll('#talla-options .variant-btn').forEach(btn => {
                 btn.classList.toggle('selected', btn.dataset.talla === selectedTalla);
             });
-
-            // Colores
             document.querySelectorAll('#color-options .variant-btn').forEach(btn => {
                 btn.classList.toggle('selected', btn.dataset.color === selectedColor);
             });
 
-            // Re-evaluar si la talla seleccionada tiene stock en el color actual
-            // y viceversa, deshabilitando combinaciones sin stock
             const p = currentProduct;
             document.querySelectorAll('#talla-options .variant-btn').forEach(btn => {
                 const t = btn.dataset.talla;
@@ -450,12 +440,12 @@
             });
         }
 
-        // ---------- MOSTRAR INFO DE LA COMBINACIÓN SELECCIONADA ----------
         function renderCombinacionInfo() {
             const p = currentProduct;
             const container = document.getElementById('combinacion-info');
-            const stock = DB.getStockByVariant(p, selectedTalla, selectedColor);
+            if (!container) return;
 
+            const stock = DB.getStockByVariant(p, selectedTalla, selectedColor);
             const estado = stock === 0 ? '❌ Agotado' : (stock <= 3 ? '⚠️ Últimas unidades' : '✅ Disponible');
             const color = stock === 0 ? 'var(--danger)' : (stock <= 3 ? 'var(--warning)' : 'var(--success)');
 
@@ -482,11 +472,11 @@
             `;
         }
 
-        // ---------- BOTÓN AGREGAR AL CARRITO ----------
         function renderBotonAgregar() {
             const p = currentProduct;
             const stock = DB.getStockByVariant(p, selectedTalla, selectedColor);
             const container = document.getElementById('add-to-cart-container');
+            if (!container) return;
 
             if (stock === 0) {
                 container.innerHTML = `
@@ -507,7 +497,6 @@
             `;
         }
 
-        // ---------- AGREGAR AL CARRITO ----------
         function addToCart() {
             if (!currentProduct) return;
             const stock = DB.getStockByVariant(currentProduct, selectedTalla, selectedColor);
