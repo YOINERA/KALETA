@@ -84,7 +84,7 @@ const DB = {
                 sku: "PAN-002", destacado: true, nuevo: false
             },
             {
-                id: 3, nombre: "Casaca Bomber Neón", categoria: 'Casacas', categoriaId: 3,
+                id: 3, nombre: "Casaca Bomber", categoria: 'Casacas', categoriaId: 3,
                 precio: 180.00, precioAnterior: 220.00,
                 img: "https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg?auto=compress&cs=tinysrgb&w=600",
                 desc: "Casaca bomber con cierre metálico y detalles en neón.",
@@ -112,7 +112,7 @@ const DB = {
                 sku: "GOR-004", destacado: false, nuevo: true
             },
             {
-                id: 5, nombre: "Hoodie Gris Melange", categoria: 'Casacas', categoriaId: 3,
+                id: 5, nombre: "Hoodie Melange", categoria: 'Casacas', categoriaId: 3,
                 precio: 95.00, precioAnterior: 120.00,
                 img: "https://images.pexels.com/photos/7679720/pexels-photo-7679720.jpeg?auto=compress&cs=tinysrgb&w=600",
                 desc: "Hoodie con capucha y bolsillo canguro.",
@@ -181,36 +181,10 @@ const DB = {
                 colores: ["Negro", "Blanco", "Gris", "Azul", "Rojo"],
                 sku: "POL-009", destacado: false, nuevo: true
             },
+           
+            
             {
-                id: 10, nombre: "Short Deportivo", categoria: 'Pantalones', categoriaId: 2,
-                precio: 75.00, precioAnterior: 95.00,
-                img: "https://images.pexels.com/photos/1598507/pexels-photo-1598507.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Short deportivo con tejido transpirable.",
-                descLarga: "Short deportivo con tejido transpirable y elástico en la cintura. Bolsillos laterales con cierre. Ideal para entrenar o para el día a día.",
-                composicion: "90% Poliéster, 10% Elastano",
-                cuidados: "Lavar a máquina en frío. Secar al aire.",
-                origen: "Importado",
-                garantia: "30 días para cambios y devoluciones",
-                tallas: ["S", "M", "L", "XL", "XXL"],
-                colores: ["Negro", "Gris", "Azul", "Rojo"],
-                sku: "SHO-010", destacado: false, nuevo: false
-            },
-            {
-                id: 11, nombre: "Chaqueta Jean Clásica", categoria: 'Casacas', categoriaId: 3,
-                precio: 195.00, precioAnterior: 240.00,
-                img: "https://images.pexels.com/photos/1124465/pexels-photo-1124465.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Chaqueta de jean con corte clásico.",
-                descLarga: "Chaqueta de jean con corte clásico y lavado medio. Botones metálicos y costuras reforzadas. Cuatro bolsillos frontales. Un básico atemporal que nunca pasa de moda.",
-                composicion: "100% Algodón denim",
-                cuidados: "Lavar del revés en frío. No usar secadora.",
-                origen: "Importado",
-                garantia: "30 días para cambios y devoluciones",
-                tallas: ["XS", "S", "M", "L", "XL", "XXL"],
-                colores: ["Azul Claro", "Azul Oscuro", "Negro", "Blanco"],
-                sku: "CHA-011", destacado: true, nuevo: true
-            },
-            {
-                id: 12, nombre: "Beanie Negro Unisex", categoria: 'Accesorios', categoriaId: 4,
+                id: 10, nombre: "Beanie Unisex", categoria: 'Accesorios', categoriaId: 4,
                 precio: 35.00, precioAnterior: null,
                 img: "https://images.pexels.com/photos/6046159/pexels-photo-6046159.jpeg?auto=compress&cs=tinysrgb&w=600",
                 desc: "Gorro de lana suave y abrigador.",
@@ -223,22 +197,9 @@ const DB = {
                 colores: ["Negro", "Gris", "Rojo", "Verde", "Azul Marino"],
                 sku: "BEA-012", destacado: false, nuevo: true
             },
+            
             {
-                id: 13, nombre: "Jogger Deportivo", categoria: 'Pantalones', categoriaId: 2,
-                precio: 89.90, precioAnterior: 110.00,
-                img: "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=600",
-                desc: "Jogger con puños elásticos y cordón ajustable.",
-                descLarga: "Jogger de felpa perchada con puños elásticos y cordón ajustable. Dos bolsillos laterales y uno trasero. Corte tapered que estiliza la silueta.",
-                composicion: "70% Algodón, 30% Poliéster",
-                cuidados: "Lavar a máquina en frío. Secar a la sombra.",
-                origen: "Confeccionado en Perú",
-                garantia: "30 días para cambios y devoluciones",
-                tallas: ["XS", "S", "M", "L", "XL", "XXL"],
-                colores: ["Gris", "Negro", "Azul Marino", "Beige"],
-                sku: "JOG-013", destacado: false, nuevo: false
-            },
-            {
-                id: 14, nombre: "Polera Cuello Alto", categoria: 'Polos', categoriaId: 1,
+                id: 11, nombre: "Polera Cuello Alto", categoria: 'Polos', categoriaId: 1,
                 precio: 85.00, precioAnterior: 105.00,
                 img: "https://images.pexels.com/photos/6626903/pexels-photo-6626903.jpeg?auto=compress&cs=tinysrgb&w=600",
                 desc: "Polera de cuello alto en tejido grueso.",
@@ -252,7 +213,7 @@ const DB = {
                 sku: "POL-014", destacado: false, nuevo: true
             },
             {
-                id: 15, nombre: "Zapatillas Running Pro", categoria: 'Calzado', categoriaId: 5,
+                id: 12, nombre: "Zapatillas Running Pro", categoria: 'Calzado', categoriaId: 5,
                 precio: 245.00, precioAnterior: 290.00,
                 img: "https://images.pexels.com/photos/1456706/pexels-photo-1456706.jpeg?auto=compress&cs=tinysrgb&w=600",
                 desc: "Zapatillas deportivas con amortiguación de alto rendimiento.",
