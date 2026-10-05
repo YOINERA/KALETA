@@ -98,7 +98,7 @@ const DB = {
                 sku: "CAS-003", destacado: true, nuevo: true
             },
             {
-                id: 4, nombre: "Gorra Snapback Roja", categoria: 'Accesorios', categoriaId: 4,
+                id: 4, nombre: "Gorra Snapback", categoria: 'Accesorios', categoriaId: 4,
                 precio: 45.00, precioAnterior: null,
                 img: "https://images.pexels.com/photos/1878821/pexels-photo-1878821.jpeg?auto=compress&cs=tinysrgb&w=600",
                 desc: "Gorra snapback ajustable con bordado frontal.",
@@ -182,7 +182,7 @@ const DB = {
                 sku: "POL-009", destacado: false, nuevo: true
             },
             {
-                id: 10, nombre: "Short Deportivo Negro", categoria: 'Pantalones', categoriaId: 2,
+                id: 10, nombre: "Short Deportivo", categoria: 'Pantalones', categoriaId: 2,
                 precio: 75.00, precioAnterior: 95.00,
                 img: "https://images.pexels.com/photos/1598507/pexels-photo-1598507.jpeg?auto=compress&cs=tinysrgb&w=600",
                 desc: "Short deportivo con tejido transpirable.",
@@ -224,7 +224,7 @@ const DB = {
                 sku: "BEA-012", destacado: false, nuevo: true
             },
             {
-                id: 13, nombre: "Jogger Deportivo Gris", categoria: 'Pantalones', categoriaId: 2,
+                id: 13, nombre: "Jogger Deportivo", categoria: 'Pantalones', categoriaId: 2,
                 precio: 89.90, precioAnterior: 110.00,
                 img: "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=600",
                 desc: "Jogger con puños elásticos y cordón ajustable.",
