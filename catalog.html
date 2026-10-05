@@ -71,50 +71,49 @@
 
         // ---------- RENDERIZAR PRODUCTOS ----------
         function renderProducts(category = 'all') {
-            const grid = document.getElementById('products-grid');
-            let products = DB.getProducts();
+    const grid = document.getElementById('products-grid');
+    let products = DB.getProducts();
 
-            if (category !== 'all') {
-                products = products.filter(p => p.categoriaId == category);
-            }
+    if (category !== 'all') {
+        products = products.filter(p => p.categoriaId == category);
+    }
 
-            if (products.length === 0) {
-                grid.innerHTML = '<p style="text-align:center; color: var(--text-muted); grid-column: 1/-1; padding: 3rem;">No hay productos en esta categoría.</p>';
-                return;
-            }
+    if (products.length === 0) {
+        grid.innerHTML = '<p style="text-align:center; color: var(--text-muted); grid-column: 1/-1; padding: 3rem;">No hay productos en esta categoría.</p>';
+        return;
+    }
 
-            grid.innerHTML = products.map(p => {
-                const hasDiscount = p.precioAnterior && p.precioAnterior > p.precio;
-                const discountPct = hasDiscount ? Math.round((1 - p.precio / p.precioAnterior) * 100) : 0;
-                const fallbackUrl = p.fallback || getFallback(p.nombre);
-                
-                return `
-                    <div class="product-card">
-                        ${hasDiscount ? `<span class="badge">-${discountPct}%</span>` : ''}
-                        ${p.nuevo && !hasDiscount ? `<span class="badge new">Nuevo</span>` : ''}
-                        <a href="product.html?id=${p.id}" style="text-decoration:none; color:inherit;">
-                            <img src="${p.img}" 
-                                 alt="${p.nombre}" 
-                                 loading="lazy" 
-                                 onerror="this.onerror=null; this.src='${fallbackUrl}';">
-                            <div class="product-info">
-                                <div class="category">${p.categoria}</div>
-                                <h3>${p.nombre}</h3>
-                                <div class="product-price">
-                                    S/ ${p.precio.toFixed(2)}
-                                    ${hasDiscount ? `<span class="old">S/ ${p.precioAnterior.toFixed(2)}</span>` : ''}
-                                </div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-                                    ${p.stock === 0 ? '❌ Agotado' : (p.stock <= 5 ? `⚠️ Solo ${p.stock} disponibles` : `✅ ${p.stock} en stock`)}
-                                </div>
-                                <span class="btn-primary" style="font-size: 0.85rem; padding: 0.6rem;">Ver Detalles</span>
-                            </div>
-                        </a>
+    grid.innerHTML = products.map(p => {
+        const hasDiscount = p.precioAnterior && p.precioAnterior > p.precio;
+        const discountPct = hasDiscount ? Math.round((1 - p.precio / p.precioAnterior) * 100) : 0;
+        const fallbackUrl = p.fallback || `https://placehold.co/600x600/1e1e1e/ff3d00?text=${encodeURIComponent(p.nombre)}&font=Montserrat`;
+        
+        return `
+            <div class="product-card">
+                ${hasDiscount ? `<span class="badge">-${discountPct}%</span>` : ''}
+                ${p.nuevo && !hasDiscount ? `<span class="badge new">Nuevo</span>` : ''}
+                <a href="product.html?id=${p.id}" style="text-decoration:none; color:inherit;">
+                    <img src="${p.img}" 
+                         alt="${p.nombre}" 
+                         loading="lazy" 
+                         onerror="this.onerror=null; this.src='${fallbackUrl}';">
+                    <div class="product-info">
+                        <div class="category">${p.categoria}</div>
+                        <h3>${p.nombre}</h3>
+                        <div class="product-price">
+                            S/ ${p.precio.toFixed(2)}
+                            ${hasDiscount ? `<span class="old">S/ ${p.precioAnterior.toFixed(2)}</span>` : ''}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                            ${p.stock === 0 ? '❌ Agotado' : (p.stock <= 10 ? `⚠️ Solo ${p.stock} disponibles` : `✅ ${p.stock} en stock`)}
+                        </div>
+                        <span class="btn-primary" style="font-size: 0.85rem; padding: 0.6rem;">Ver Detalles</span>
                     </div>
-                `;
-            }).join('');
-        }
-
+                </a>
+            </div>
+        `;
+    }).join('');
+}
         // ---------- FILTROS ----------
         function filterCategory(cat, btn) {
             document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));

@@ -5,6 +5,173 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Producto — LA KALETA</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Estilos específicos del detalle de producto */
+        .variant-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1.2rem;
+        }
+        
+        .variant-section h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .variant-section h4 .stock-total {
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        .variant-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .variant-btn {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.2s;
+            position: relative;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .variant-btn:hover:not(.disabled):not(.selected) {
+            border-color: var(--primary);
+        }
+
+        .variant-btn.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 61, 0, 0.4);
+        }
+
+        .variant-btn.disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            text-decoration: line-through;
+            background: #1a1a1a;
+            color: #555;
+        }
+
+        .variant-btn .stock-mini {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 500;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .variant-btn.selected .stock-mini {
+            color: #ffe0d5;
+        }
+
+        /* Tabla de disponibilidad */
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 0.8rem;
+        }
+
+        .stock-table th, .stock-table td {
+            padding: 0.6rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stock-table th {
+            background: var(--bg);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stock-ok { color: var(--success); font-weight: 700; }
+        .stock-low { color: var(--warning); font-weight: 700; }
+        .stock-out { color: var(--danger); font-weight: 700; }
+
+        /* Info adicional del producto */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+        }
+
+        .info-item {
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .info-item .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.3rem;
+            font-weight: 700;
+        }
+
+        .info-item .value {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        @media (min-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .live-stock-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            color: var(--success);
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .live-stock-indicator::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse-live 1.5s infinite;
+        }
+
+        @keyframes pulse-live {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
 </head>
 <body>
 
@@ -15,9 +182,7 @@
             <a href="catalog.html">Catálogo</a> / <span id="breadcrumb-cat">Producto</span>
         </div>
 
-        <div class="product-detail" id="product-detail">
-            <!-- Se carga vía JS -->
-        </div>
+        <div class="product-detail" id="product-detail"></div>
 
         <div style="margin-top: 3rem;">
             <h2 style="margin-bottom: 1.5rem; text-transform:uppercase; letter-spacing:1px;">Productos Relacionados</h2>
@@ -33,10 +198,23 @@
     <script src="js/app.js"></script>
     <script>
         let currentProduct = null;
+        let selectedTalla = null;
+        let selectedColor = null;
 
-        // ---------- HELPER: GENERAR FALLBACK ----------
         function getFallback(nombre) {
             return `https://placehold.co/600x600/1e1e1e/ff3d00?text=${encodeURIComponent(nombre)}&font=Montserrat`;
+        }
+
+        function stockClass(n) {
+            if (n === 0) return 'stock-out';
+            if (n <= 3) return 'stock-low';
+            return 'stock-ok';
+        }
+
+        function stockLabel(n) {
+            if (n === 0) return 'Agotado';
+            if (n <= 3) return `Solo ${n}`;
+            return `${n} disp.`;
         }
 
         function loadProduct() {
@@ -51,13 +229,34 @@
 
             currentProduct = product;
 
+            // Auto-seleccionar primera variante con stock
+            for (const t of product.tallas) {
+                for (const c of product.colores) {
+                    if (DB.getStockByVariant(product, t, c) > 0) {
+                        selectedTalla = t;
+                        selectedColor = c;
+                        break;
+                    }
+                }
+                if (selectedTalla) break;
+            }
+            if (!selectedTalla) {
+                selectedTalla = product.tallas[0];
+                selectedColor = product.colores[0];
+            }
+
             document.getElementById('breadcrumb-cat').innerText = product.categoria;
 
             const hasDiscount = product.precioAnterior && product.precioAnterior > product.precio;
             const discountPct = hasDiscount ? Math.round((1 - product.precio / product.precioAnterior) * 100) : 0;
-            const stockClass = product.stock === 0 ? 'out' : (product.stock <= 5 ? 'low' : '');
-            const stockText = product.stock === 0 ? 'Agotado' : (product.stock <= 5 ? `¡Solo ${product.stock} disponibles!` : `${product.stock} en stock`);
+            const totalStock = product.stock;
             const fallbackUrl = product.fallback || getFallback(product.nombre);
+
+            // Estado general
+            let estadoStock, estadoClass;
+            if (totalStock === 0) { estadoStock = '❌ Producto Agotado'; estadoClass = 'out'; }
+            else if (totalStock <= 10) { estadoStock = `⚠️ Últimas unidades (${totalStock} disponibles)`; estadoClass = 'low'; }
+            else { estadoStock = `✅ Disponible (${totalStock} unidades)`; estadoClass = ''; }
 
             document.getElementById('product-detail').innerHTML = `
                 <div class="product-gallery">
@@ -68,45 +267,114 @@
                 <div class="product-detail-info">
                     <div class="category" style="color: var(--text-muted); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 0.5rem;">${product.categoria}</div>
                     <h1>${product.nombre}</h1>
+                    
                     <div class="price-block">
                         <span class="price">S/ ${product.precio.toFixed(2)}</span>
                         ${hasDiscount ? `<span class="price-old">S/ ${product.precioAnterior.toFixed(2)}</span><span class="discount-tag">-${discountPct}%</span>` : ''}
                     </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <span class="live-stock-indicator">● Stock en tiempo real</span>
+                    </div>
+
                     <div class="stock-info">
-                        <span class="stock-dot ${stockClass}"></span>
-                        <span style="color: var(--text-muted);">${stockText}</span>
-                    </div>
-                    <p class="description">${product.desc}</p>
-                    
-                    <div class="form-group">
-                        <label>Talla</label>
-                        <select id="select-talla">
-                            ${product.tallas.map(t => `<option value="${t}">${t}</option>`).join('')}
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Color</label>
-                        <select id="select-color">
-                            ${product.colores.map(c => `<option value="${c}">${c}</option>`).join('')}
-                        </select>
+                        <span class="stock-dot ${estadoClass}"></span>
+                        <span style="color: var(--text-muted); font-weight: 600;">${estadoStock}</span>
                     </div>
 
-                    <div style="display:flex; gap:0.8rem; margin-top:1.5rem;">
-                        <button class="btn-primary" onclick="addToCart()" ${product.stock === 0 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-                            🛒 Agregar al Carrito
-                        </button>
+                    <p class="description">${product.descLarga || product.desc}</p>
+
+                    <!-- ============ SELECCIÓN DE TALLA ============ -->
+                    <div class="variant-section">
+                        <h4>
+                            <span>📏 Talla</span>
+                            <span class="stock-total">${product.tallas.length} opciones</span>
+                        </h4>
+                        <div class="variant-options" id="talla-options">
+                            ${product.tallas.map(t => {
+                                const stockT = DB.getStockByTalla(product, t);
+                                const disabled = stockT === 0 ? 'disabled' : '';
+                                return `
+                                    <button class="variant-btn ${disabled}" 
+                                            data-talla="${t}" 
+                                            onclick="selectTalla('${t}', this)">
+                                        ${t}
+                                        <span class="stock-mini">${stockLabel(stockT)}</span>
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
 
-                    <div style="margin-top:1.5rem; padding:1rem; background: var(--surface); border-radius: 8px; border:1px solid var(--border); font-size:0.85rem; color: var(--text-muted);">
-                        <p>🚚 Envío gratis en compras mayores a S/ 150</p>
-                        <p style="margin-top:0.5rem;">🔄 Devolución gratuita dentro de 30 días</p>
-                        <p style="margin-top:0.5rem;">📦 SKU: ${product.sku}</p>
+                    <!-- ============ SELECCIÓN DE COLOR ============ -->
+                    <div class="variant-section">
+                        <h4>
+                            <span>🎨 Color</span>
+                            <span class="stock-total">${product.colores.length} opciones</span>
+                        </h4>
+                        <div class="variant-options" id="color-options">
+                            ${product.colores.map(c => {
+                                const stockC = DB.getStockByColor(product, c);
+                                const disabled = stockC === 0 ? 'disabled' : '';
+                                return `
+                                    <button class="variant-btn ${disabled}" 
+                                            data-color="${c}" 
+                                            onclick="selectColor('${c}', this)">
+                                        ${c}
+                                        <span class="stock-mini">${stockLabel(stockC)}</span>
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- ============ DISPONIBILIDAD POR COMBINACIÓN ============ -->
+                    <div class="variant-section">
+                        <h4>
+                            <span>📊 Disponibilidad por combinación</span>
+                        </h4>
+                        <div id="combinacion-info"></div>
+                    </div>
+
+                    <!-- ============ BOTÓN AGREGAR ============ -->
+                    <div id="add-to-cart-container" style="margin-top: 1.5rem;"></div>
+
+                    <!-- ============ INFORMACIÓN ADICIONAL ============ -->
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="label">🧵 Composición</div>
+                            <div class="value">${product.composicion || 'No especificada'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">🌍 Origen</div>
+                            <div class="value">${product.origen || 'No especificado'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">🧼 Cuidados</div>
+                            <div class="value">${product.cuidados || 'Lavar según indicaciones de la etiqueta'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">🛡️ Garantía</div>
+                            <div class="value">${product.garantia || '30 días'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">📦 SKU</div>
+                            <div class="value">${product.sku}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">🚚 Envío</div>
+                            <div class="value">Gratis en compras mayores a S/ 150</div>
+                        </div>
                     </div>
                 </div>
             `;
 
-            // Productos relacionados (misma categoría, excluyendo el actual)
+            // Marcar selección inicial
+            actualizarSeleccionUI();
+            renderCombinacionInfo();
+            renderBotonAgregar();
+
+            // Productos relacionados
             const related = DB.getProducts().filter(p => p.categoriaId === product.categoriaId && p.id !== product.id).slice(0, 4);
             const relatedGrid = document.getElementById('related-products');
             
@@ -127,6 +395,9 @@
                             <div class="product-info">
                                 <h3>${p.nombre}</h3>
                                 <div class="product-price">S/ ${p.precio.toFixed(2)}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                                    ${p.stock > 0 ? `✅ ${p.stock} en stock` : '❌ Agotado'}
+                                </div>
                             </div>
                         </a>
                     </div>
@@ -134,11 +405,117 @@
             }).join('');
         }
 
+        // ---------- SELECCIÓN DE TALLA ----------
+        function selectTalla(talla, btn) {
+            if (btn.classList.contains('disabled')) return;
+            selectedTalla = talla;
+            actualizarSeleccionUI();
+            renderCombinacionInfo();
+            renderBotonAgregar();
+        }
+
+        // ---------- SELECCIÓN DE COLOR ----------
+        function selectColor(color, btn) {
+            if (btn.classList.contains('disabled')) return;
+            selectedColor = color;
+            actualizarSeleccionUI();
+            renderCombinacionInfo();
+            renderBotonAgregar();
+        }
+
+        // ---------- ACTUALIZAR UI DE SELECCIÓN ----------
+        function actualizarSeleccionUI() {
+            // Tallas
+            document.querySelectorAll('#talla-options .variant-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.talla === selectedTalla);
+            });
+
+            // Colores
+            document.querySelectorAll('#color-options .variant-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.color === selectedColor);
+            });
+
+            // Re-evaluar si la talla seleccionada tiene stock en el color actual
+            // y viceversa, deshabilitando combinaciones sin stock
+            const p = currentProduct;
+            document.querySelectorAll('#talla-options .variant-btn').forEach(btn => {
+                const t = btn.dataset.talla;
+                const stockCombo = DB.getStockByVariant(p, t, selectedColor);
+                btn.classList.toggle('disabled', stockCombo === 0);
+            });
+            document.querySelectorAll('#color-options .variant-btn').forEach(btn => {
+                const c = btn.dataset.color;
+                const stockCombo = DB.getStockByVariant(p, selectedTalla, c);
+                btn.classList.toggle('disabled', stockCombo === 0);
+            });
+        }
+
+        // ---------- MOSTRAR INFO DE LA COMBINACIÓN SELECCIONADA ----------
+        function renderCombinacionInfo() {
+            const p = currentProduct;
+            const container = document.getElementById('combinacion-info');
+            const stock = DB.getStockByVariant(p, selectedTalla, selectedColor);
+
+            const estado = stock === 0 ? '❌ Agotado' : (stock <= 3 ? '⚠️ Últimas unidades' : '✅ Disponible');
+            const color = stock === 0 ? 'var(--danger)' : (stock <= 3 ? 'var(--warning)' : 'var(--success)');
+
+            container.innerHTML = `
+                <div style="background: var(--bg); padding: 1rem; border-radius: 8px; border-left: 3px solid ${color};">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                        <div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom: 4px;">Tu selección</div>
+                            <div style="font-size: 1.05rem; font-weight: 700;">
+                                Talla <span style="color: var(--primary);">${selectedTalla}</span> · Color <span style="color: var(--primary);">${selectedColor}</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform:uppercase; margin-bottom: 2px;">Disponibles</div>
+                            <div style="font-size: 1.3rem; font-weight: 800; color: ${color};">
+                                ${stock} ${stock === 1 ? 'unidad' : 'unidades'}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 0.8rem; font-size: 0.85rem; color: ${color}; font-weight: 700;">
+                        ${estado}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ---------- BOTÓN AGREGAR AL CARRITO ----------
+        function renderBotonAgregar() {
+            const p = currentProduct;
+            const stock = DB.getStockByVariant(p, selectedTalla, selectedColor);
+            const container = document.getElementById('add-to-cart-container');
+
+            if (stock === 0) {
+                container.innerHTML = `
+                    <button class="btn-primary" disabled style="opacity:0.5; cursor:not-allowed; background:#333;">
+                        ❌ Sin stock en esta combinación
+                    </button>
+                    <p style="text-align:center; font-size:0.85rem; color: var(--text-muted); margin-top:0.8rem;">
+                        Prueba con otra talla o color
+                    </p>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <button class="btn-primary" onclick="addToCart()">
+                    🛒 Agregar al Carrito · S/ ${(p.precio).toFixed(2)}
+                </button>
+            `;
+        }
+
+        // ---------- AGREGAR AL CARRITO ----------
         function addToCart() {
             if (!currentProduct) return;
-            const talla = document.getElementById('select-talla').value;
-            const color = document.getElementById('select-color').value;
-            Cart.add(currentProduct, talla, color);
+            const stock = DB.getStockByVariant(currentProduct, selectedTalla, selectedColor);
+            if (stock === 0) {
+                showToast('Sin stock en esta combinación', 'error');
+                return;
+            }
+            Cart.add(currentProduct, selectedTalla, selectedColor);
             renderHeader();
         }
 
