@@ -6,6 +6,45 @@
     <title>Admin — LA KALETA</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* Info adicional en el modal QR */
+        #qr-url-info {
+            margin: 1rem 0;
+        }
+        #qr-url-info .url-box {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            word-break: break-all;
+            background: var(--bg);
+            padding: 0.7rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        #qr-url-info .url-box code {
+            color: var(--primary);
+            font-size: 0.7rem;
+            font-family: 'Courier New', monospace;
+        }
+        #qr-url-info .alert-box {
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.8rem;
+            text-align: left;
+            line-height: 1.4;
+        }
+        #qr-url-info .alert-localhost {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+        }
+        #qr-url-info .alert-public {
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+    </style>
 </head>
 <body>
 
@@ -143,14 +182,26 @@
         </div>
     </div>
 
-    <!-- Modal QR -->
+    <!-- Modal QR MEJORADO -->
     <div class="modal" id="qr-modal">
         <div class="modal-content">
             <h3>📱 Código QR Generado</h3>
             <p id="qr-product-name" style="color: var(--primary); font-weight: 700; margin: 0.5rem 0 1rem;"></p>
+            
+            <!-- Info dinámica de la URL (se llena vía JS) -->
+            <div id="qr-url-info"></div>
+            
+            <!-- El QR se genera aquí -->
             <div id="qrcode-container"></div>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">Imprime este código y pégalo en la etiqueta física de la prenda.</p>
-            <button class="btn-secondary" onclick="closeQRModal()">Cerrar</button>
+            
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                Imprime este código y pégalo en la etiqueta física de la prenda.
+            </p>
+            
+            <div style="display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;">
+                <button class="btn-secondary" onclick="closeQRModal()">Cerrar</button>
+                <button class="btn-outline" onclick="resetearIPLocal()" style="font-size: 0.8rem;" title="Configurar IP local">⚙️ IP</button>
+            </div>
         </div>
     </div>
 
@@ -186,7 +237,7 @@
                     <td style="font-size:0.8rem;">${p.sku}</td>
                     <td style="color: var(--primary); font-weight:700;">S/ ${p.precio.toFixed(2)}</td>
                     <td>
-                        <span style="color: ${p.stock === 0 ? 'var(--danger)' : (p.stock <= 5 ? 'var(--warning)' : 'var(--success)')}; font-weight:700;">
+                        <span style="color: ${p.stock === 0 ? 'var(--danger)' : (p.stock <= 10 ? 'var(--warning)' : 'var(--success)')}; font-weight:700;">
                             ${p.stock}
                         </span>
                     </td>
@@ -198,7 +249,7 @@
 
             // Tabla de pedidos
             const ordersBody = document.getElementById('admin-orders-body');
-            ordersBody.innerHTML = orders.reverse().map(o => `
+            ordersBody.innerHTML = orders.slice().reverse().map(o => `
                 <tr>
                     <td><strong style="color: var(--primary);">${o.id}</strong></td>
                     <td>${o.userId === 1 ? 'Kevin Villacorta' : 'Cliente ' + o.userId}</td>
@@ -225,6 +276,9 @@
             const catNames = { 1: 'Polos', 2: 'Pantalones', 3: 'Casacas', 4: 'Accesorios', 5: 'Calzado' };
             const catId = parseInt(document.getElementById('np-categoria').value);
 
+            const tallas = document.getElementById('np-tallas').value.split(',').map(t => t.trim()).filter(t => t);
+            const colores = document.getElementById('np-colores').value.split(',').map(c => c.trim()).filter(c => c);
+
             const newProduct = {
                 id: newId,
                 nombre: document.getElementById('np-nombre').value,
@@ -232,15 +286,34 @@
                 categoriaId: catId,
                 precio: parseFloat(document.getElementById('np-precio').value),
                 precioAnterior: parseFloat(document.getElementById('np-precio-ant').value) || null,
-                img: document.getElementById('np-img').value || 'https://placehold.co/600x600/222/fff?text=Producto',
+                img: document.getElementById('np-img').value || `https://placehold.co/600x600/1e1e1e/ff3d00?text=${encodeURIComponent(document.getElementById('np-nombre').value)}&font=Montserrat`,
+                fallback: `https://placehold.co/600x600/1e1e1e/ff3d00?text=${encodeURIComponent(document.getElementById('np-nombre').value)}&font=Montserrat`,
                 desc: document.getElementById('np-desc').value,
-                tallas: document.getElementById('np-tallas').value.split(',').map(t => t.trim()),
-                colores: document.getElementById('np-colores').value.split(',').map(c => c.trim()),
-                stock: parseInt(document.getElementById('np-stock').value),
+                descLarga: document.getElementById('np-desc').value,
+                composicion: 'No especificada',
+                cuidados: 'Lavar según indicaciones de la etiqueta',
+                origen: 'No especificado',
+                garantia: '30 días para cambios',
+                tallas: tallas,
+                colores: colores,
                 sku: document.getElementById('np-sku').value,
                 destacado: false,
                 nuevo: true
             };
+
+            // Generar inventario automáticamente
+            if (typeof DB.buildInventory === 'function') {
+                newProduct.inventario = DB.buildInventory(tallas, colores, 8);
+                newProduct.stock = Object.values(newProduct.inventario).reduce((s, v) => s + v, 0);
+            } else {
+                newProduct.inventario = {};
+                newProduct.stock = parseInt(document.getElementById('np-stock').value) || 0;
+                tallas.forEach(t => {
+                    colores.forEach(c => {
+                        newProduct.inventario[`${t}__${c}`] = newProduct.stock;
+                    });
+                });
+            }
 
             products.push(newProduct);
             DB.setProducts(products);
@@ -250,37 +323,191 @@
             switchAdminTab('productos', document.querySelector('.admin-tab'));
         }
 
-        // ---------- GENERAR QR ----------
+        // ============================================================
+        // GENERAR QR CON DETECCIÓN AUTOMÁTICA DE ENTORNO
+        // ============================================================
         function generateQR(productId) {
             const product = DB.getProducts().find(p => p.id === productId);
             if (!product) return;
 
-            // URL que apuntará al producto
-            const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', 'product.html');
-            const productUrl = `${baseUrl}?id=${productId}`;
+            // Detectar el entorno automáticamente
+            const host = window.location.hostname;
+            const port = window.location.port;
+            const protocol = window.location.protocol;
+            const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '';
+
+            let baseUrl;
+            let aviso;
+
+            if (isLocalhost) {
+                // ===== EN DESARROLLO (Live Server) =====
+                let ipLocal = localStorage.getItem('lk_ip_local');
+
+                if (!ipLocal) {
+                    // Pedir la IP al admin la primera vez
+                    ipLocal = prompt(
+                        '⚠️ Estás trabajando en localhost.\n\n' +
+                        'El QR con "localhost" NO funcionará al escanearlo desde un celular.\n\n' +
+                        '📌 Ingresa la IP local de esta PC para que el QR funcione en tu red WiFi.\n\n' +
+                        '¿Cómo saber tu IP?\n' +
+                        '1. Abre CMD (Windows + R → cmd → Enter)\n' +
+                        '2. Escribe: ipconfig\n' +
+                        '3. Busca "Dirección IPv4" en tu adaptador WiFi\n' +
+                        '4. Se ve algo como: 192.168.1.50\n\n' +
+                        'Ingresa la IP (sin http://):',
+                        '192.168.1.'
+                    );
+
+                    if (!ipLocal || ipLocal.trim() === '') {
+                        if (confirm('❌ No ingresaste una IP.\n\n¿Generar el QR con localhost de todas formas?\n\n⚠️ ADVERTENCIA: Solo funcionará si abres la URL directamente desde esta PC.')) {
+                            baseUrl = `${protocol}//${host}:${port}`;
+                            aviso = 'localhost';
+                        } else {
+                            return; // El usuario canceló
+                        }
+                    } else {
+                        ipLocal = ipLocal.trim();
+                        localStorage.setItem('lk_ip_local', ipLocal);
+                        baseUrl = `http://${ipLocal}:${port}`;
+                        aviso = 'red-local';
+                    }
+                } else {
+                    // Ya hay IP guardada
+                    const usarIP = confirm(
+                        `📡 IP guardada: ${ipLocal}\n\n` +
+                        `✅ Aceptar = Usar esta IP (QR funcional en celulares de la misma red)\n` +
+                        `❌ Cancelar = Cambiar la IP`
+                    );
+                    
+                    if (usarIP) {
+                        baseUrl = `http://${ipLocal}:${port}`;
+                        aviso = 'red-local';
+                    } else {
+                        const nuevaIP = prompt('Ingresa la nueva IP local:', ipLocal);
+                        if (nuevaIP && nuevaIP.trim()) {
+                            localStorage.setItem('lk_ip_local', nuevaIP.trim());
+                            baseUrl = `http://${nuevaIP.trim()}:${port}`;
+                            aviso = 'red-local';
+                        } else {
+                            baseUrl = `${protocol}//${host}:${port}`;
+                            aviso = 'localhost';
+                        }
+                    }
+                }
+            } else {
+                // ===== EN PRODUCCIÓN (GitHub Pages, dominio propio, etc.) =====
+                // Usar la URL base sin "admin.html"
+                const pathParts = window.location.pathname.split('/');
+                pathParts.pop(); // Quitar admin.html
+                const basePath = pathParts.join('/');
+                baseUrl = `${protocol}//${host}${basePath}`;
+                aviso = 'publica';
+            }
+
+            // URL final del producto
+            const productUrl = `${baseUrl}/product.html?id=${productId}`;
+
+            console.log('📱 QR generado con URL:', productUrl);
+            console.log('🌐 Entorno:', aviso.toUpperCase());
 
             // Mostrar modal
             const modal = document.getElementById('qr-modal');
             modal.classList.add('active');
             document.getElementById('qr-product-name').innerText = product.nombre;
 
+            // Info de la URL (con aviso según entorno)
+            const urlInfo = document.getElementById('qr-url-info');
+            
+            let alertHTML = '';
+            if (aviso === 'publica') {
+                alertHTML = `
+                    <div class="alert-box alert-public">
+                        ✅ <strong>URL pública:</strong> Este QR funcionará con cualquier cámara (celulares, tablets, etc.) desde cualquier lugar.
+                    </div>
+                `;
+            } else if (aviso === 'red-local') {
+                alertHTML = `
+                    <div class="alert-box alert-localhost">
+                        📡 <strong>Modo red local:</strong> Este QR funcionará <strong>solo si el celular está conectado a la misma WiFi</strong> que esta PC.<br><br>
+                        <strong>Para escanearlo:</strong><br>
+                        1. Conecta el celular a la misma WiFi<br>
+                        2. Abre la cámara del celular<br>
+                        3. Apunta al QR<br>
+                        4. Toca la notificación que aparece
+                    </div>
+                `;
+            } else {
+                alertHTML = `
+                    <div class="alert-box alert-localhost">
+                        ⚠️ <strong>Modo localhost:</strong> Este QR <strong>NO funcionará en celulares</strong>. Solo funciona si abres la URL directamente en esta PC.<br><br>
+                        <strong>Recomendación:</strong> Haz clic en "⚙️ IP" abajo y configura tu IP local.
+                    </div>
+                `;
+            }
+
+            urlInfo.innerHTML = `
+                ${alertHTML}
+                <div class="url-box">
+                    <strong>URL del QR:</strong><br>
+                    <code>${productUrl}</code>
+                </div>
+            `;
+
             // Limpiar contenedor
             const container = document.getElementById('qrcode-container');
             container.innerHTML = '';
 
             // Generar QR
-            qrCodeInstance = new QRCode(container, {
-                text: productUrl,
-                width: 220,
-                height: 220,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
+            try {
+                qrCodeInstance = new QRCode(container, {
+                    text: productUrl,
+                    width: 220,
+                    height: 220,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch (err) {
+                console.error('Error generando QR:', err);
+                container.innerHTML = '<p style="color: var(--danger);">Error al generar el QR. Intenta de nuevo.</p>';
+            }
         }
 
         function closeQRModal() {
             document.getElementById('qr-modal').classList.remove('active');
+            qrCodeInstance = null;
+        }
+
+        // ---------- RESETEAR IP LOCAL ----------
+        function resetearIPLocal() {
+            const ipActual = localStorage.getItem('lk_ip_local');
+            if (!ipActual) {
+                // Pedir nueva IP
+                const nuevaIP = prompt(
+                    '⚙️ Configurar IP local\n\n' +
+                    'Esta IP se usa para generar QR que funcionen en tu red WiFi.\n\n' +
+                    '📌 Para saber tu IP:\n' +
+                    '1. Abre CMD (Windows + R → cmd)\n' +
+                    '2. Escribe: ipconfig\n' +
+                    '3. Copia la "Dirección IPv4" de tu WiFi\n\n' +
+                    'Ingresa la IP (ej. 192.168.1.50):'
+                );
+                if (nuevaIP && nuevaIP.trim()) {
+                    localStorage.setItem('lk_ip_local', nuevaIP.trim());
+                    showToast('✅ IP guardada: ' + nuevaIP.trim(), 'success');
+                }
+            } else {
+                if (confirm(`IP actual guardada: ${ipActual}\n\n¿Qué deseas hacer?\n\n✅ Aceptar = Cambiar la IP\n❌ Cancelar = Borrar la IP guardada`)) {
+                    const nuevaIP = prompt('Ingresa la nueva IP local:', ipActual);
+                    if (nuevaIP && nuevaIP.trim()) {
+                        localStorage.setItem('lk_ip_local', nuevaIP.trim());
+                        showToast('✅ IP actualizada: ' + nuevaIP.trim(), 'success');
+                    }
+                } else {
+                    localStorage.removeItem('lk_ip_local');
+                    showToast('🗑️ IP borrada. Se pedirá de nuevo al generar un QR.', 'info');
+                }
+            }
         }
 
         // ---------- INICIALIZACIÓN ----------
