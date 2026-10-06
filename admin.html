@@ -8,9 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         /* Info adicional en el modal QR */
-        #qr-url-info {
-            margin: 1rem 0;
-        }
+        #qr-url-info { margin: 1rem 0; }
         #qr-url-info .url-box {
             font-size: 0.75rem;
             color: var(--text-muted);
@@ -44,6 +42,217 @@
             border: 1px solid var(--success);
             color: var(--success);
         }
+
+        /* ============ PANEL DE SOLICITUDES ============ */
+        .tab-with-badge {
+            position: relative;
+        }
+        .tab-badge {
+            background: var(--danger);
+            color: white;
+            border-radius: 50px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            margin-left: 6px;
+            animation: pulse-badge 1.5s infinite;
+            display: inline-block;
+        }
+        .tab-badge.hidden { display: none; }
+
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .solicitud-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--warning);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .solicitud-card.pendiente {
+            border-left-color: var(--warning);
+            animation: pulse-solicitud 2s infinite;
+        }
+        .solicitud-card.atendido {
+            border-left-color: var(--success);
+            opacity: 0.65;
+        }
+        .solicitud-card.cancelado {
+            border-left-color: var(--danger);
+            opacity: 0.5;
+        }
+
+        @keyframes pulse-solicitud {
+            0%, 100% { box-shadow: 0 4px 15px rgba(255, 193, 7, 0); }
+            50% { box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3); }
+        }
+
+        .solicitud-card .codigo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            font-family: 'Courier New', monospace;
+            color: var(--primary);
+            letter-spacing: 2px;
+        }
+
+        .solicitud-card .info-principal {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .solicitud-card .info-principal h4 {
+            font-size: 1rem;
+            margin-bottom: 0.3rem;
+            font-weight: 700;
+        }
+
+        .solicitud-card .info-principal .meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .solicitud-card .talla-color {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .solicitud-card .tag {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .solicitud-card .tag.talla {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .solicitud-card .tag.color {
+            border-color: #1976d2;
+            color: #1976d2;
+        }
+
+        .solicitud-card .hora {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .solicitud-card .acciones {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .solicitud-card .estado-badge {
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .estado-pendiente {
+            background: rgba(255, 193, 7, 0.15);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .estado-atendido {
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .estado-cancelado {
+            background: rgba(255, 23, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .filtros-solicitudes {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filtros-solicitudes button {
+            padding: 0.5rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .filtros-solicitudes button.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .contador-solicitudes {
+            background: var(--surface-2);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .contador-solicitudes .item .num {
+            font-size: 1.8rem;
+            font-weight: 900;
+            display: block;
+        }
+
+        .contador-solicitudes .item .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .contador-solicitudes .num.pendiente { color: var(--warning); }
+        .contador-solicitudes .num.atendido { color: var(--success); }
+        .contador-solicitudes .num.cancelado { color: var(--danger); }
     </style>
 </head>
 <body>
@@ -68,8 +277,8 @@
                 <div class="value" id="stat-productos">0</div>
             </div>
             <div class="stat-card">
-                <h3>Ticket Promedio</h3>
-                <div class="value" id="stat-ticket">S/ 0.00</div>
+                <h3>Solicitudes Pendientes</h3>
+                <div class="value" id="stat-solicitudes" style="color: var(--warning);">0</div>
             </div>
         </div>
 
@@ -78,6 +287,9 @@
             <button class="admin-tab active" onclick="switchAdminTab('productos', this)">📦 Productos</button>
             <button class="admin-tab" onclick="switchAdminTab('agregar', this)">➕ Agregar Producto</button>
             <button class="admin-tab" onclick="switchAdminTab('pedidos', this)">📋 Pedidos</button>
+            <button class="admin-tab tab-with-badge" onclick="switchAdminTab('solicitudes', this)">
+                🛎️ Solicitudes <span class="tab-badge hidden" id="tab-badge-solicitudes">0</span>
+            </button>
         </div>
 
         <!-- Panel: Productos -->
@@ -180,6 +392,54 @@
                 </table>
             </div>
         </div>
+
+        <!-- Panel: Solicitudes de Vendedor -->
+        <div class="admin-panel" id="panel-solicitudes">
+            <!-- Contadores -->
+            <div class="contador-solicitudes">
+                <div class="item">
+                    <span class="num pendiente" id="count-pendientes">0</span>
+                    <span class="label">Pendientes</span>
+                </div>
+                <div class="item">
+                    <span class="num atendido" id="count-atendidos">0</span>
+                    <span class="label">Atendidos</span>
+                </div>
+                <div class="item">
+                    <span class="num cancelado" id="count-cancelados">0</span>
+                    <span class="label">Cancelados</span>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filtros-solicitudes">
+                <button class="active" data-filtro="todos" onclick="filtrarSolicitudes('todos', this)">Todas</button>
+                <button data-filtro="pendiente" onclick="filtrarSolicitudes('pendiente', this)">⏳ Pendientes</button>
+                <button data-filtro="atendido" onclick="filtrarSolicitudes('atendido', this)">✅ Atendidas</button>
+                <button data-filtro="cancelado" onclick="filtrarSolicitudes('cancelado', this)">❌ Canceladas</button>
+            </div>
+
+            <!-- Lista de solicitudes -->
+            <div id="solicitudes-list"></div>
+
+            <!-- Botones de simulación (solo para demo) -->
+            <div style="margin-top: 2rem; padding: 1rem; background: var(--surface); border-radius: 12px; border: 1px dashed var(--border);">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
+                    🧪 <strong>Herramientas de demo</strong> (solo para pruebas)
+                </p>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button class="btn-outline" style="font-size:0.8rem; padding:0.5rem 1rem;" onclick="simularSolicitud()">
+                        ➕ Simular nueva solicitud
+                    </button>
+                    <button class="btn-outline" style="font-size:0.8rem; padding:0.5rem 1rem;" onclick="simularVariasSolicitudes()">
+                        ➕➕ Simular 3 solicitudes
+                    </button>
+                    <button class="btn-danger" style="font-size:0.8rem; padding:0.5rem 1rem;" onclick="limpiarSolicitudes()">
+                        🗑️ Limpiar todas
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal QR MEJORADO -->
@@ -187,17 +447,11 @@
         <div class="modal-content">
             <h3>📱 Código QR Generado</h3>
             <p id="qr-product-name" style="color: var(--primary); font-weight: 700; margin: 0.5rem 0 1rem;"></p>
-            
-            <!-- Info dinámica de la URL (se llena vía JS) -->
             <div id="qr-url-info"></div>
-            
-            <!-- El QR se genera aquí -->
             <div id="qrcode-container"></div>
-            
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">
                 Imprime este código y pégalo en la etiqueta física de la prenda.
             </p>
-            
             <div style="display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;">
                 <button class="btn-secondary" onclick="closeQRModal()">Cerrar</button>
                 <button class="btn-outline" onclick="resetearIPLocal()" style="font-size: 0.8rem;" title="Configurar IP local">⚙️ IP</button>
@@ -213,20 +467,34 @@
     <script src="js/app.js"></script>
     <script>
         let qrCodeInstance = null;
+        let filtroSolicitudesActual = 'todos';
 
-        // ---------- DASHBOARD ----------
+        // ============================================================
+        // DASHBOARD
+        // ============================================================
         function renderDashboard() {
             const sales = DB.getSales();
             const products = DB.getProducts();
             const orders = DB.getOrders();
+            const solicitudes = getSolicitudes();
 
             const totalVentas = sales.reduce((s, v) => s + v.total, 0);
             const ticketPromedio = sales.length > 0 ? totalVentas / sales.length : 0;
+            const pendientes = solicitudes.filter(s => s.estado === 'pendiente').length;
 
             document.getElementById('stat-ventas').innerText = 'S/ ' + totalVentas.toFixed(2);
             document.getElementById('stat-pedidos').innerText = sales.length;
             document.getElementById('stat-productos').innerText = products.length;
-            document.getElementById('stat-ticket').innerText = 'S/ ' + ticketPromedio.toFixed(2);
+            document.getElementById('stat-solicitudes').innerText = pendientes;
+
+            // Badge en la pestaña
+            const badge = document.getElementById('tab-badge-solicitudes');
+            if (pendientes > 0) {
+                badge.innerText = pendientes;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
 
             // Tabla de productos
             const tbody = document.getElementById('admin-products-body');
@@ -260,15 +528,23 @@
             `).join('');
         }
 
-        // ---------- TABS ----------
+        // ============================================================
+        // TABS
+        // ============================================================
         function switchAdminTab(tab, btn) {
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById('panel-' + tab).classList.add('active');
+
+            if (tab === 'solicitudes') {
+                renderSolicitudes();
+            }
         }
 
-        // ---------- AGREGAR PRODUCTO ----------
+        // ============================================================
+        // AGREGAR PRODUCTO
+        // ============================================================
         function addProduct(e) {
             e.preventDefault();
             const products = DB.getProducts();
@@ -301,7 +577,6 @@
                 nuevo: true
             };
 
-            // Generar inventario automáticamente
             if (typeof DB.buildInventory === 'function') {
                 newProduct.inventario = DB.buildInventory(tallas, colores, 8);
                 newProduct.stock = Object.values(newProduct.inventario).reduce((s, v) => s + v, 0);
@@ -324,13 +599,242 @@
         }
 
         // ============================================================
+        // SOLICITUDES DE VENDEDOR
+        // ============================================================
+        function getSolicitudes() {
+            return JSON.parse(localStorage.getItem('lk_solicitudes_vendedor') || '[]');
+        }
+
+        function setSolicitudes(arr) {
+            localStorage.setItem('lk_solicitudes_vendedor', JSON.stringify(arr));
+        }
+
+        function renderSolicitudes() {
+            const todas = getSolicitudes();
+            
+            // Contadores
+            const pendientes = todas.filter(s => s.estado === 'pendiente').length;
+            const atendidos = todas.filter(s => s.estado === 'atendido').length;
+            const cancelados = todas.filter(s => s.estado === 'cancelado').length;
+
+            document.getElementById('count-pendientes').innerText = pendientes;
+            document.getElementById('count-atendidos').innerText = atendidos;
+            document.getElementById('count-cancelados').innerText = cancelados;
+
+            // Badge del tab
+            const badge = document.getElementById('tab-badge-solicitudes');
+            if (pendientes > 0) {
+                badge.innerText = pendientes;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            // Estadística superior
+            document.getElementById('stat-solicitudes').innerText = pendientes;
+
+            // Filtrar
+            let filtradas = todas;
+            if (filtroSolicitudesActual !== 'todos') {
+                filtradas = todas.filter(s => s.estado === filtroSolicitudesActual);
+            }
+
+            // Ordenar: pendientes primero, luego por timestamp descendente
+            filtradas.sort((a, b) => {
+                if (a.estado === 'pendiente' && b.estado !== 'pendiente') return -1;
+                if (a.estado !== 'pendiente' && b.estado === 'pendiente') return 1;
+                return (b.timestamp || 0) - (a.timestamp || 0);
+            });
+
+            const container = document.getElementById('solicitudes-list');
+
+            if (filtradas.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🛎️</div>
+                        <h3>No hay solicitudes ${filtroSolicitudesActual === 'todos' ? 'registradas' : filtroSolicitudesActual + 's'}</h3>
+                        <p style="margin-top: 0.5rem;">Las solicitudes de clientes aparecerán aquí</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtradas.map(s => {
+                const estadoClass = `estado-${s.estado}`;
+                const cardClass = s.estado;
+                
+                let botones = '';
+                if (s.estado === 'pendiente') {
+                    botones = `
+                        <button class="btn-primary" style="padding: 0.6rem 1rem; font-size: 0.85rem; background: var(--success);" onclick="cambiarEstadoSolicitud('${s.codigo}', 'atendido')">
+                            ✅ Atendido
+                        </button>
+                        <button class="btn-danger" style="padding: 0.6rem 1rem; font-size: 0.85rem;" onclick="cambiarEstadoSolicitud('${s.codigo}', 'cancelado')">
+                            ❌ Cancelar
+                        </button>
+                    `;
+                } else {
+                    botones = `
+                        <button class="btn-outline" style="padding: 0.5rem 0.9rem; font-size: 0.75rem;" onclick="cambiarEstadoSolicitud('${s.codigo}', 'pendiente')">
+                            🔄 Reabrir
+                        </button>
+                    `;
+                }
+
+                // Calcular tiempo transcurrido
+                const tiempo = s.timestamp ? tiempoTranscurrido(s.timestamp) : '';
+
+                return `
+                    <div class="solicitud-card ${cardClass}">
+                        <div class="info-principal">
+                            <div style="display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+                                <span class="codigo">${s.codigo}</span>
+                                <span class="estado-badge ${estadoClass}">${s.estado}</span>
+                            </div>
+                            <h4>${s.producto}</h4>
+                            <div class="meta">SKU: ${s.sku} · Precio: S/ ${s.precio.toFixed(2)}</div>
+                            <div class="talla-color">
+                                <span class="tag talla">📏 Talla ${s.talla}</span>
+                                <span class="tag color">🎨 ${s.color}</span>
+                            </div>
+                            <div class="hora">🕐 ${s.fecha || 'hoy'} ${tiempo ? `· ${tiempo}` : ''}</div>
+                        </div>
+                        <div class="acciones">
+                            ${botones}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function tiempoTranscurrido(timestamp) {
+            const ahora = Date.now();
+            const diff = Math.floor((ahora - timestamp) / 1000); // segundos
+            
+            if (diff < 60) return `hace ${diff}s`;
+            if (diff < 3600) return `hace ${Math.floor(diff / 60)}min`;
+            if (diff < 86400) return `hace ${Math.floor(diff / 3600)}h`;
+            return `hace ${Math.floor(diff / 86400)}d`;
+        }
+
+        function cambiarEstadoSolicitud(codigo, nuevoEstado) {
+            const solicitudes = getSolicitudes();
+            const index = solicitudes.findIndex(s => s.codigo === codigo);
+            if (index === -1) return;
+
+            solicitudes[index].estado = nuevoEstado;
+            setSolicitudes(solicitudes);
+
+            const mensajes = {
+                'atendido': '✅ Solicitud marcada como atendida',
+                'cancelado': '❌ Solicitud cancelada',
+                'pendiente': '🔄 Solicitud reabierta'
+            };
+            const tipos = {
+                'atendido': 'success',
+                'cancelado': 'error',
+                'pendiente': 'info'
+            };
+
+            showToast(mensajes[nuevoEstado], tipos[nuevoEstado]);
+            renderSolicitudes();
+            renderDashboard();
+        }
+
+        function filtrarSolicitudes(filtro, btn) {
+            filtroSolicitudesActual = filtro;
+            document.querySelectorAll('.filtros-solicitudes button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderSolicitudes();
+        }
+
+        // ============================================================
+        // SIMULACIÓN DE SOLICITUDES (para demo)
+        // ============================================================
+        function simularSolicitud() {
+            const productos = DB.getProducts();
+            if (productos.length === 0) {
+                showToast('No hay productos para simular', 'error');
+                return;
+            }
+
+            const producto = productos[Math.floor(Math.random() * productos.length)];
+            const talla = producto.tallas[Math.floor(Math.random() * producto.tallas.length)];
+            const color = producto.colores[Math.floor(Math.random() * producto.colores.length)];
+            const codigo = `LK-${Math.floor(1000 + Math.random() * 9000)}`;
+            const ahora = new Date();
+            const hora = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+
+            const nuevaSolicitud = {
+                codigo,
+                producto: producto.nombre,
+                sku: producto.sku,
+                talla,
+                color,
+                precio: producto.precio,
+                fecha: hora,
+                estado: 'pendiente',
+                timestamp: Date.now()
+            };
+
+            const solicitudes = getSolicitudes();
+            solicitudes.push(nuevaSolicitud);
+            setSolicitudes(solicitudes);
+
+            showToast(`🛎️ Nueva solicitud simulada: ${codigo}`, 'success');
+            renderSolicitudes();
+            renderDashboard();
+        }
+
+        function simularVariasSolicitudes() {
+            const productos = DB.getProducts();
+            if (productos.length === 0) return;
+
+            const solicitudes = getSolicitudes();
+            const nombres = ['Kevin Villacorta', 'María López', 'Carlos Ruiz', 'Ana Torres', 'Luis Mendoza'];
+
+            for (let i = 0; i < 3; i++) {
+                const producto = productos[Math.floor(Math.random() * productos.length)];
+                const talla = producto.tallas[Math.floor(Math.random() * producto.tallas.length)];
+                const color = producto.colores[Math.floor(Math.random() * producto.colores.length)];
+                const codigo = `LK-${Math.floor(1000 + Math.random() * 9000)}`;
+                const ahora = new Date();
+                const hora = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+
+                solicitudes.push({
+                    codigo,
+                    producto: producto.nombre,
+                    sku: producto.sku,
+                    talla,
+                    color,
+                    precio: producto.precio,
+                    fecha: hora,
+                    estado: 'pendiente',
+                    timestamp: Date.now() - (i * 30000) // Cada una 30s antes
+                });
+            }
+
+            setSolicitudes(solicitudes);
+            showToast('🛎️ 3 solicitudes simuladas', 'success');
+            renderSolicitudes();
+            renderDashboard();
+        }
+
+        function limpiarSolicitudes() {
+            if (!confirm('¿Borrar TODAS las solicitudes del historial?')) return;
+            setSolicitudes([]);
+            showToast('🗑️ Historial limpiado', 'info');
+            renderSolicitudes();
+            renderDashboard();
+        }
+
+        // ============================================================
         // GENERAR QR CON DETECCIÓN AUTOMÁTICA DE ENTORNO
         // ============================================================
         function generateQR(productId) {
             const product = DB.getProducts().find(p => p.id === productId);
             if (!product) return;
 
-            // Detectar el entorno automáticamente
             const host = window.location.hostname;
             const port = window.location.port;
             const protocol = window.location.protocol;
@@ -340,11 +844,9 @@
             let aviso;
 
             if (isLocalhost) {
-                // ===== EN DESARROLLO (Live Server) =====
                 let ipLocal = localStorage.getItem('lk_ip_local');
 
                 if (!ipLocal) {
-                    // Pedir la IP al admin la primera vez
                     ipLocal = prompt(
                         '⚠️ Estás trabajando en localhost.\n\n' +
                         'El QR con "localhost" NO funcionará al escanearlo desde un celular.\n\n' +
@@ -359,11 +861,11 @@
                     );
 
                     if (!ipLocal || ipLocal.trim() === '') {
-                        if (confirm('❌ No ingresaste una IP.\n\n¿Generar el QR con localhost de todas formas?\n\n⚠️ ADVERTENCIA: Solo funcionará si abres la URL directamente desde esta PC.')) {
+                        if (confirm('❌ No ingresaste una IP.\n\n¿Generar el QR con localhost de todas formas?')) {
                             baseUrl = `${protocol}//${host}:${port}`;
                             aviso = 'localhost';
                         } else {
-                            return; // El usuario canceló
+                            return;
                         }
                     } else {
                         ipLocal = ipLocal.trim();
@@ -372,10 +874,9 @@
                         aviso = 'red-local';
                     }
                 } else {
-                    // Ya hay IP guardada
                     const usarIP = confirm(
                         `📡 IP guardada: ${ipLocal}\n\n` +
-                        `✅ Aceptar = Usar esta IP (QR funcional en celulares de la misma red)\n` +
+                        `✅ Aceptar = Usar esta IP\n` +
                         `❌ Cancelar = Cambiar la IP`
                     );
                     
@@ -395,52 +896,38 @@
                     }
                 }
             } else {
-                // ===== EN PRODUCCIÓN (GitHub Pages, dominio propio, etc.) =====
-                // Usar la URL base sin "admin.html"
                 const pathParts = window.location.pathname.split('/');
-                pathParts.pop(); // Quitar admin.html
+                pathParts.pop();
                 const basePath = pathParts.join('/');
                 baseUrl = `${protocol}//${host}${basePath}`;
                 aviso = 'publica';
             }
 
-            // URL final del producto
             const productUrl = `${baseUrl}/product.html?id=${productId}`;
 
-            console.log('📱 QR generado con URL:', productUrl);
-            console.log('🌐 Entorno:', aviso.toUpperCase());
-
-            // Mostrar modal
             const modal = document.getElementById('qr-modal');
             modal.classList.add('active');
             document.getElementById('qr-product-name').innerText = product.nombre;
 
-            // Info de la URL (con aviso según entorno)
             const urlInfo = document.getElementById('qr-url-info');
             
             let alertHTML = '';
             if (aviso === 'publica') {
                 alertHTML = `
                     <div class="alert-box alert-public">
-                        ✅ <strong>URL pública:</strong> Este QR funcionará con cualquier cámara (celulares, tablets, etc.) desde cualquier lugar.
+                        ✅ <strong>URL pública:</strong> Este QR funcionará con cualquier cámara desde cualquier lugar.
                     </div>
                 `;
             } else if (aviso === 'red-local') {
                 alertHTML = `
                     <div class="alert-box alert-localhost">
-                        📡 <strong>Modo red local:</strong> Este QR funcionará <strong>solo si el celular está conectado a la misma WiFi</strong> que esta PC.<br><br>
-                        <strong>Para escanearlo:</strong><br>
-                        1. Conecta el celular a la misma WiFi<br>
-                        2. Abre la cámara del celular<br>
-                        3. Apunta al QR<br>
-                        4. Toca la notificación que aparece
+                        📡 <strong>Modo red local:</strong> Solo funciona si el celular está en la misma WiFi que esta PC.
                     </div>
                 `;
             } else {
                 alertHTML = `
                     <div class="alert-box alert-localhost">
-                        ⚠️ <strong>Modo localhost:</strong> Este QR <strong>NO funcionará en celulares</strong>. Solo funciona si abres la URL directamente en esta PC.<br><br>
-                        <strong>Recomendación:</strong> Haz clic en "⚙️ IP" abajo y configura tu IP local.
+                        ⚠️ <strong>Modo localhost:</strong> NO funcionará en celulares. Configura tu IP con "⚙️ IP".
                     </div>
                 `;
             }
@@ -453,11 +940,9 @@
                 </div>
             `;
 
-            // Limpiar contenedor
             const container = document.getElementById('qrcode-container');
             container.innerHTML = '';
 
-            // Generar QR
             try {
                 qrCodeInstance = new QRCode(container, {
                     text: productUrl,
@@ -469,7 +954,7 @@
                 });
             } catch (err) {
                 console.error('Error generando QR:', err);
-                container.innerHTML = '<p style="color: var(--danger);">Error al generar el QR. Intenta de nuevo.</p>';
+                container.innerHTML = '<p style="color: var(--danger);">Error al generar el QR.</p>';
             }
         }
 
@@ -478,42 +963,61 @@
             qrCodeInstance = null;
         }
 
-        // ---------- RESETEAR IP LOCAL ----------
         function resetearIPLocal() {
             const ipActual = localStorage.getItem('lk_ip_local');
             if (!ipActual) {
-                // Pedir nueva IP
-                const nuevaIP = prompt(
-                    '⚙️ Configurar IP local\n\n' +
-                    'Esta IP se usa para generar QR que funcionen en tu red WiFi.\n\n' +
-                    '📌 Para saber tu IP:\n' +
-                    '1. Abre CMD (Windows + R → cmd)\n' +
-                    '2. Escribe: ipconfig\n' +
-                    '3. Copia la "Dirección IPv4" de tu WiFi\n\n' +
-                    'Ingresa la IP (ej. 192.168.1.50):'
-                );
+                const nuevaIP = prompt('Ingresa la IP local (ej. 192.168.1.50):');
                 if (nuevaIP && nuevaIP.trim()) {
                     localStorage.setItem('lk_ip_local', nuevaIP.trim());
                     showToast('✅ IP guardada: ' + nuevaIP.trim(), 'success');
                 }
             } else {
-                if (confirm(`IP actual guardada: ${ipActual}\n\n¿Qué deseas hacer?\n\n✅ Aceptar = Cambiar la IP\n❌ Cancelar = Borrar la IP guardada`)) {
-                    const nuevaIP = prompt('Ingresa la nueva IP local:', ipActual);
+                if (confirm(`IP actual: ${ipActual}\n\n✅ Aceptar = Cambiar\n❌ Cancelar = Borrar`)) {
+                    const nuevaIP = prompt('Ingresa la nueva IP:', ipActual);
                     if (nuevaIP && nuevaIP.trim()) {
                         localStorage.setItem('lk_ip_local', nuevaIP.trim());
-                        showToast('✅ IP actualizada: ' + nuevaIP.trim(), 'success');
+                        showToast('✅ IP actualizada', 'success');
                     }
                 } else {
                     localStorage.removeItem('lk_ip_local');
-                    showToast('🗑️ IP borrada. Se pedirá de nuevo al generar un QR.', 'info');
+                    showToast('🗑️ IP borrada', 'info');
                 }
             }
         }
 
-        // ---------- INICIALIZACIÓN ----------
+        // ============================================================
+        // AUTO-REFRESH: Detectar solicitudes nuevas cada 5 segundos
+        // ============================================================
+        function iniciarAutoRefresh() {
+            setInterval(() => {
+                const solicitudes = getSolicitudes();
+                const pendientes = solicitudes.filter(s => s.estado === 'pendiente').length;
+                const badge = document.getElementById('tab-badge-solicitudes');
+                
+                if (pendientes > 0) {
+                    badge.innerText = pendientes;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+
+                document.getElementById('stat-solicitudes').innerText = pendientes;
+
+                // Si estamos en el panel de solicitudes, re-renderizar
+                const panelSolicitudes = document.getElementById('panel-solicitudes');
+                if (panelSolicitudes.classList.contains('active')) {
+                    renderSolicitudes();
+                }
+            }, 5000);
+        }
+
+        // ============================================================
+        // INICIALIZACIÓN
+        // ============================================================
         document.addEventListener('DOMContentLoaded', () => {
             requireAuth('admin');
             renderDashboard();
+            iniciarAutoRefresh();
         });
     </script>
 </body>

@@ -135,6 +135,145 @@
             text-align: center;
             margin: 2rem 0;
         }
+
+        /* ============ BOTÓN SOLICITAR VENDEDOR ============ */
+        .btn-seller {
+            background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.3s;
+            margin-top: 0.8rem;
+            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-seller:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(25, 118, 210, 0.5);
+            background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
+        }
+        .btn-seller:active {
+            transform: translateY(0);
+        }
+        .btn-seller:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #333;
+            box-shadow: none;
+        }
+        .btn-seller .icon {
+            font-size: 1.3rem;
+        }
+        .btn-seller::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .btn-seller:hover::before {
+            left: 100%;
+        }
+
+        /* ============ MODAL DE SOLICITUD ============ */
+        .seller-modal-info {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin: 1rem 0;
+            text-align: left;
+            border-left: 4px solid #1976d2;
+        }
+        .seller-modal-info .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        .seller-modal-info .row:last-child {
+            border-bottom: none;
+        }
+        .seller-modal-info .row .label {
+            color: var(--text-muted);
+        }
+        .seller-modal-info .row .value {
+            font-weight: 700;
+            color: var(--text);
+        }
+        .seller-modal-info .row .value.highlight {
+            color: var(--primary);
+        }
+
+        .seller-ticket {
+            background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .seller-ticket::before,
+        .seller-ticket::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--surface);
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .seller-ticket::before { left: -10px; }
+        .seller-ticket::after { right: -10px; }
+
+        .seller-ticket .code {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            margin: 0.5rem 0;
+            font-family: 'Courier New', monospace;
+        }
+        .seller-ticket .label {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .seller-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .seller-actions button {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        /* Animación de pulso del botón cuando no hay vendedor */
+        @keyframes pulse-seller {
+            0%, 100% { box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3); }
+            50% { box-shadow: 0 4px 25px rgba(25, 118, 210, 0.6); }
+        }
+        .btn-seller.pulse {
+            animation: pulse-seller 2s infinite;
+        }
     </style>
 </head>
 <body>
@@ -154,6 +293,29 @@
         </div>
     </div>
 
+    <!-- ============ MODAL SOLICITAR VENDEDOR ============ -->
+    <div class="modal" id="seller-modal">
+        <div class="modal-content">
+            <h3>🛎️ Solicitar Vendedor</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                Un vendedor traerá esta prenda directo a tu probador
+            </p>
+
+            <div class="seller-modal-info" id="seller-modal-info">
+                <!-- Se llena vía JS -->
+            </div>
+
+            <div id="seller-ticket-container"></div>
+
+            <div class="seller-actions" id="seller-actions">
+                <button class="btn-secondary" onclick="closeSellerModal()">Cancelar</button>
+                <button class="btn-primary" onclick="confirmarSolicitudVendedor()" style="background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);">
+                    ✅ Confirmar Solicitud
+                </button>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <p>© 2026 LA KALETA — Streetwear & Urban Culture</p>
     </footer>
@@ -164,6 +326,7 @@
         let currentProduct = null;
         let selectedTalla = null;
         let selectedColor = null;
+        let solicitudActiva = null;
 
         function getFallback(nombre) {
             return `https://placehold.co/600x600/1e1e1e/ff3d00?text=${encodeURIComponent(nombre)}&font=Montserrat`;
@@ -185,10 +348,8 @@
             console.log('🚀 Cargando producto...');
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
-            console.log('📦 ID solicitado:', id);
 
             if (!id) {
-                console.warn('❌ No hay ID en la URL');
                 window.location.href = 'catalog.html';
                 return;
             }
@@ -196,29 +357,22 @@
             const product = DB.getProducts().find(p => p.id == id);
 
             if (!product) {
-                console.warn('❌ Producto no encontrado con ID:', id);
                 document.getElementById('product-detail').innerHTML = `
                     <div class="error-box">
                         <h3>Producto no encontrado</h3>
-                        <p style="margin-top: 0.5rem;">El producto con ID ${id} no existe.</p>
                         <a href="catalog.html" class="btn-primary" style="margin-top: 1rem; max-width: 250px;">Volver al catálogo</a>
                     </div>
                 `;
                 return;
             }
 
-            console.log('✅ Producto encontrado:', product.nombre);
-
             currentProduct = product;
 
-            // Validar que el producto tenga tallas y colores
             if (!product.tallas || !product.colores || !product.inventario) {
-                console.error('❌ Producto sin tallas/colores/inventario:', product);
                 document.getElementById('product-detail').innerHTML = `
                     <div class="error-box">
                         <h3>Producto con datos incompletos</h3>
-                        <p style="margin-top: 0.5rem;">Este producto no tiene inventario configurado. Limpia el localStorage y recarga.</p>
-                        <button class="btn-primary" onclick="forzarReseed()" style="margin-top: 1rem; max-width: 250px;">Limpiar y Recargar</button>
+                        <button class="btn-primary" onclick="forzarReseed()" style="margin-top: 1rem;">Limpiar y Recargar</button>
                     </div>
                 `;
                 return;
@@ -241,8 +395,6 @@
                 selectedTalla = product.tallas[0];
                 selectedColor = product.colores[0];
             }
-
-            console.log('🎯 Selección inicial:', selectedTalla, selectedColor);
 
             document.getElementById('breadcrumb-cat').innerText = product.categoria;
 
@@ -333,6 +485,12 @@
 
                     <div id="add-to-cart-container" style="margin-top: 1.5rem;"></div>
 
+                    <!-- ============ BOTÓN SOLICITAR VENDEDOR ============ -->
+                    <button class="btn-seller pulse" id="btn-solicitar-vendedor" onclick="abrirModalVendedor()">
+                        <span class="icon">🛎️</span>
+                        <span>Solicitar que un vendedor me traiga esta talla al probador</span>
+                    </button>
+
                     <div class="info-grid">
                         <div class="info-item">
                             <div class="label">🧵 Composición</div>
@@ -394,8 +552,6 @@
                     </div>
                 `;
             }).join('');
-
-            console.log('✅ Producto renderizado correctamente');
         }
 
         function forzarReseed() {
@@ -403,6 +559,7 @@
             window.location.reload();
         }
 
+        // ---------- SELECCIÓN ----------
         function selectTalla(talla, btn) {
             if (btn.classList.contains('disabled')) return;
             selectedTalla = talla;
@@ -506,6 +663,121 @@
             }
             Cart.add(currentProduct, selectedTalla, selectedColor);
             renderHeader();
+        }
+
+        // ============================================================
+        // SOLICITAR VENDEDOR AL PROBADOR
+        // ============================================================
+        function abrirModalVendedor() {
+            const p = currentProduct;
+            const stock = DB.getStockByVariant(p, selectedTalla, selectedColor);
+
+            if (stock === 0) {
+                showToast('Esta combinación no tiene stock', 'error');
+                return;
+            }
+
+            // Generar código único de solicitud
+            const codigo = generarCodigoSolicitud();
+            solicitudActiva = {
+                codigo,
+                producto: p.nombre,
+                sku: p.sku,
+                talla: selectedTalla,
+                color: selectedColor,
+                precio: p.precio,
+                fecha: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
+            };
+
+            // Llenar info del modal
+            document.getElementById('seller-modal-info').innerHTML = `
+                <div class="row">
+                    <span class="label">Producto:</span>
+                    <span class="value">${p.nombre}</span>
+                </div>
+                <div class="row">
+                    <span class="label">SKU:</span>
+                    <span class="value">${p.sku}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Talla solicitada:</span>
+                    <span class="value highlight">${selectedTalla}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Color:</span>
+                    <span class="value highlight">${selectedColor}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Precio:</span>
+                    <span class="value">S/ ${p.precio.toFixed(2)}</span>
+                </div>
+            `;
+
+            // Ocultar el ticket (se muestra al confirmar)
+            document.getElementById('seller-ticket-container').innerHTML = '';
+
+            // Restaurar botones
+            document.getElementById('seller-actions').innerHTML = `
+                <button class="btn-secondary" onclick="closeSellerModal()">Cancelar</button>
+                <button class="btn-primary" onclick="confirmarSolicitudVendedor()" style="background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);">
+                    ✅ Confirmar Solicitud
+                </button>
+            `;
+
+            // Abrir modal
+            document.getElementById('seller-modal').classList.add('active');
+        }
+
+        function confirmarSolicitudVendedor() {
+            if (!solicitudActiva) return;
+
+            const s = solicitudActiva;
+
+            // Guardar la solicitud en localStorage (para el panel admin)
+            const solicitudes = JSON.parse(localStorage.getItem('lk_solicitudes_vendedor') || '[]');
+            solicitudes.push({
+                ...s,
+                estado: 'pendiente',
+                timestamp: Date.now()
+            });
+            localStorage.setItem('lk_solicitudes_vendedor', JSON.stringify(solicitudes));
+
+            // Mostrar ticket de confirmación
+            document.getElementById('seller-ticket-container').innerHTML = `
+                <div class="seller-ticket">
+                    <div class="label">Código de atención</div>
+                    <div class="code">${s.codigo}</div>
+                    <div class="label">Solicitud registrada</div>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 1rem; line-height: 1.5;">
+                    🛎️ Un vendedor ha sido notificado. En breve llegará a tu probador con:<br>
+                    <strong style="color: var(--primary);">${s.talla}</strong> · <strong style="color: var(--primary);">${s.color}</strong>
+                </p>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.8rem;">
+                    ⏱️ Hora: ${s.fecha}
+                </p>
+            `;
+
+            // Cambiar botones
+            document.getElementById('seller-actions').innerHTML = `
+                <button class="btn-primary" onclick="closeSellerModal()" style="background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);">
+                    ✅ Entendido
+                </button>
+            `;
+
+            // Toast de confirmación
+            showToast(`🛎️ Solicitud enviada. Código: ${s.codigo}`, 'success');
+        }
+
+        function generarCodigoSolicitud() {
+            // Generar código tipo: LK-1234
+            const num = Math.floor(1000 + Math.random() * 9000);
+            return `LK-${num}`;
+        }
+
+        function closeSellerModal() {
+            document.getElementById('seller-modal').classList.remove('active');
+            solicitudActiva = null;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
