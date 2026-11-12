@@ -34,6 +34,7 @@ function renderHeader(activePage = '') {
                 <a href="cart.html" class="btn-icon" title="Carrito">
                     🛒 ${cartCount > 0 ? `<span class="cart-badge">${cartCount}</span>` : ''}
                 </a>
+                <a href="contacto.html" class="btn-icon" title="Contáctenos">📞</a>
                 <a href="profile.html" class="btn-icon" title="Mi Perfil">👤</a>
             ` : ''}
             ${user && user.role === 'admin' ? `
